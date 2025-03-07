@@ -5,135 +5,168 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gruppen-Manager</title>
     <style>
-        body { font-family: Arial, sans-serif; display: flex; height: 100vh; background-color: #222; color: white; flex-direction: column; align-items: center; justify-content: center; }
-        .container { display: none; width: 100%; height: 100%; flex-direction: row; }
-        .left, .right { flex: 1; padding: 10px; border: 2px solid white; display: flex; flex-direction: column; }
-        .right { display: flex; flex-direction: column; }
-        .top, .bottom { flex: 1; padding: 10px; border-bottom: 2px solid white; }
-        .points-container, .schedule-container, .borrow-container { text-align: center; margin-top: 20px; }
-        .points { font-size: 32px; margin: 15px; font-weight: bold; }
-        button, input { font-size: 16px; padding: 5px; margin: 5px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
+        body { background-color: green; display: flex; flex-direction: row; height: 100vh; }
+        .container { flex: 1; padding: 10px; overflow: hidden; color: white; text-align: center; }
+        #left { width: 33%; border-right: 2px solid white; }
+        #right { width: 67%; display: flex; flex-direction: column; }
+        #top { flex: 1; border-bottom: 2px solid white; }
+        #bottom { flex: 1; overflow-y: auto; }
+
+        /* Punkte-System */
+        .points-container { font-size: 20px; margin-top: 20px; }
+        .points { font-size: 30px; margin: 10px; }
+        button, input { font-size: 20px; margin: 5px; padding: 10px; }
+
+        /* Spielzeug-Ausleihe */
+        #borrowed { font-size: 24px; font-weight: bold; color: yellow; margin-bottom: 10px; }
+        .kids-list { display: flex; flex-wrap: wrap; justify-content: center; font-size: 14px; }
+        .kids-list div { margin: 5px; padding: 5px; background: white; color: black; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<!-- Modus-Auswahl -->
-<div id="modeSelection">
-    <h2>Modus wählen</h2>
-    <button onclick="startApp('show')">Showmodus</button>
-    <button onclick="startApp('operator')">Operator-Modus</button>
-</div>
-
-<div id="appContainer" class="container">
-    <!-- Punkte-System (Links) -->
-    <div class="left">
+    <!-- Linke Seite: Punkte-System -->
+    <div id="left" class="container">
         <h2>Punkte-System</h2>
-        <div class="points-container" id="scoreboard"></div>
         <input type="text" id="newName" placeholder="Neuer Name">
-        <button id="addKidBtn" onclick="addKid()">Hinzufügen</button>
-        <button id="resetBtn" onclick="confirmReset()">Punkte zurücksetzen</button>
-        <button id="giveAllBtn" onclick="giveAllPoints()">Allen +1</button>
+        <button onclick="addKid()">Hinzufügen</button>
+        <button onclick="resetScores()">Punkte zurücksetzen</button>
+        <button onclick="giveAllPoints()">Allen +1</button>
+        <div id="scoreboard"></div>
     </div>
 
-    <!-- Tagesablauf (Oben rechts) -->
-    <div class="right">
-        <div class="top">
+    <!-- Rechte Seite -->
+    <div id="right">
+        
+        <!-- Oben: Tagesablauf -->
+        <div id="top" class="container">
             <h2>Tagesablauf</h2>
-            <select id="daySelector" onchange="updateSchedule()">
-                <option value="Montag">Montag</option>
-                <option value="Dienstag">Dienstag</option>
-                <option value="Mittwoch">Mittwoch</option>
-                <option value="Donnerstag">Donnerstag</option>
-                <option value="Freitag">Freitag</option>
+            <select id="daySelect" onchange="showSchedule()">
+                <option>Montag</option><option>Dienstag</option><option>Mittwoch</option>
+                <option>Donnerstag</option><option>Freitag</option>
             </select>
-            <div class="schedule-container" id="schedule"></div>
+            <div id="scheduleDisplay"></div>
         </div>
 
-        <!-- Spielzeug-Ausleihe (Unten rechts) -->
-        <div class="bottom">
+        <!-- Unten: Spielzeug-Ausleihe -->
+        <div id="bottom" class="container">
             <h2>Spielzeug-Ausleihe</h2>
-            <div class="borrow-container" id="borrowList"></div>
+            <div id="borrowed"></div>
+            <div id="kidsContainer" class="kids-list"></div>
         </div>
+
     </div>
-</div>
 
-<script>
-    let mode = "show";
-    let kids = JSON.parse(localStorage.getItem("kids")) || [];
-    const defaultNames = ["Liam", "Irem", "Malin", "Leni", "Frida G.", "Lukas", "Niklas", "Frida R.", "Matthias", "Greta", "Emilia", "Oskar", "Lotte", "David", "Max", "Ronja", "Romy", "Sophie", "Artur", "Zehra", "Ismail", "Malick", "Nela", "Mia", "Jayden"];
+    <script>
+        let kids = [
+            "Liam", "Irem", "Malin", "Leni", "Frida G.", "Lukas", "Niklas", "Frida R.", "Matthias", "Greta",
+            "Emilia", "Oskar", "Lotte", "David", "Max", "Ronja", "Romy", "Sophie", "Artur", "Zehra", "Ismail",
+            "Malick", "Nela", "Mia", "Jayden"
+        ].map(name => ({ name, points: 0, borrowed: "" }));
 
-    if (kids.length === 0) {
-        kids = defaultNames.map(name => ({ name, points: 0, borrowed: "" }));
-        saveData();
-    }
-
-    function saveData() {
-        if (mode === "operator") {
+        function saveData() {
             localStorage.setItem("kids", JSON.stringify(kids));
         }
-    }
 
-    function startApp(selectedMode) {
-        mode = selectedMode;
-        document.getElementById("modeSelection").style.display = "none";
-        document.getElementById("appContainer").style.display = "flex";
-        updateScoreboard();
-        updateSchedule();
-        updateBorrowList();
-        setInterval(rotateScoreboard, 10000);
-    }
+        function updateScoreboard() {
+            let board = document.getElementById("scoreboard");
+            board.innerHTML = "";
+            kids.sort((a, b) => b.points - a.points);
+            let visibleKids = kids.slice(0, 5);
+            visibleKids.forEach((kid, index) => {
+                board.innerHTML += `<div class="points">${index + 1}. ${kid.name}: ${kid.points} 
+                <button onclick="givePoint(${index})">+1</button> 
+                <button onclick="removePoint(${index})">-1</button></div>`;
+            });
+            setTimeout(() => {
+                kids.push(kids.shift());
+                updateScoreboard();
+            }, 10000);
+        }
 
-    function updateScoreboard() {
-        let board = document.getElementById("scoreboard");
-        board.innerHTML = "";
-        let startIndex = (currentPage * 5) % kids.length;
-        let displayedKids = kids.slice(startIndex, startIndex + 5);
-        
-        displayedKids.forEach(kid => {
-            let div = document.createElement("div");
-            div.className = "points";
-            div.innerHTML = `${kid.name}: ${kid.points} Punkte`;
-            board.appendChild(div);
-        });
-    }
+        function givePoint(index) {
+            kids[index].points++;
+            saveData();
+            updateScoreboard();
+        }
 
-    function rotateScoreboard() {
-        currentPage = (currentPage + 1) % Math.ceil(kids.length / 5);
-        updateScoreboard();
-    }
+        function removePoint(index) {
+            kids[index].points--;
+            saveData();
+            updateScoreboard();
+        }
 
-    let currentPage = 0;
+        function giveAllPoints() {
+            kids.forEach(kid => kid.points++);
+            saveData();
+            updateScoreboard();
+        }
 
-    function updateSchedule() {
-        let day = document.getElementById("daySelector").value;
-        let scheduleDiv = document.getElementById("schedule");
-        let now = new Date();
-        let time = now.getHours() * 60 + now.getMinutes();
-        let schedule = {
-            "Montag": [{ time: [1445, 1505], text: "Spielzeit" }, { time: [1550, 1605], text: "AG Angebote" }],
-            "Freitag": [{ time: [1445, 1505], text: "Mittagessen" }, { time: [1520, 1530], text: "Abholung" }]
-        };
-        scheduleDiv.innerHTML = "Aktuelle Phase: " + (schedule[day]?.find(s => time >= s.time[0] && time <= s.time[1])?.text || "Freie Zeit");
-    }
+        function addKid() {
+            let newName = document.getElementById("newName").value.trim();
+            if (newName) {
+                kids.push({ name: newName, points: 0, borrowed: "" });
+                saveData();
+                updateScoreboard();
+                updateKidsList();
+                document.getElementById("newName").value = "";
+            }
+        }
 
-    function updateBorrowList() {
-        let borrowList = document.getElementById("borrowList");
-        borrowList.innerHTML = "";
-        kids.forEach((kid, index) => {
-            let div = document.createElement("div");
-            div.innerHTML = `${kid.name}: ${kid.borrowed || "Nichts ausgeliehen"}`;
-            div.onclick = () => {
-                let item = prompt("Was leiht sich " + kid.name + " aus?");
-                if (item !== null) {
-                    kids[index].borrowed = item;
+        function resetScores() {
+            if (confirm("Bist du sicher, dass du alle Punkte zurücksetzen möchtest?")) {
+                if (confirm("Wirklich sicher? Diese Aktion kann nicht rückgängig gemacht werden!")) {
+                    kids.forEach(kid => kid.points = 0);
                     saveData();
-                    updateBorrowList();
+                    updateScoreboard();
                 }
+            }
+        }
+
+        function showSchedule() {
+            let day = document.getElementById("daySelect").value;
+            let schedules = {
+                Montag: "Spielzeit ➝ Mittagessen ➝ AGs ➝ Abholung",
+                Dienstag: "Frühstück ➝ Unterricht ➝ Sport ➝ Abholzeit",
+                Mittwoch: "Lesestunde ➝ Mittagessen ➝ Projekte ➝ Abholzeit",
+                Donnerstag: "Kreativzeit ➝ Mittagessen ➝ Draußen-Spielen ➝ Abholzeit",
+                Freitag: "Frühstück ➝ Freies Spielen ➝ Filmnachmittag ➝ Abholzeit"
             };
-            borrowList.appendChild(div);
-        });
-    }
-</script>
+            document.getElementById("scheduleDisplay").innerText = schedules[day];
+        }
+
+        function updateKidsList() {
+            let container = document.getElementById("kidsContainer");
+            let borrowedDisplay = document.getElementById("borrowed");
+            container.innerHTML = "";
+            let borrowedList = kids.filter(k => k.borrowed).map(k => `<div>${k.name} hat ${k.borrowed} ausgeliehen <button onclick="returnToy('${k.name}')">X</button></div>`);
+            borrowedDisplay.innerHTML = borrowedList.length ? borrowedList.join("") : "Niemand hat ein Spielzeug ausgeliehen.";
+            kids.forEach(kid => {
+                if (!kid.borrowed) {
+                    container.innerHTML += `<div onclick="borrowToy('${kid.name}')">${kid.name}</div>`;
+                }
+            });
+        }
+
+        function borrowToy(name) {
+            let toy = prompt(`${name} leiht sich welches Spielzeug aus?`);
+            if (toy) {
+                kids.find(k => k.name === name).borrowed = toy;
+                saveData();
+                updateKidsList();
+            }
+        }
+
+        function returnToy(name) {
+            kids.find(k => k.name === name).borrowed = "";
+            saveData();
+            updateKidsList();
+        }
+
+        updateScoreboard();
+        updateKidsList();
+    </script>
 
 </body>
 </html>
