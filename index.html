@@ -28,7 +28,7 @@
         <div id="creditsList" class="credits-list"></div>
         <button onclick="giveAllCredits()">Allen +1</button>
         <button onclick="removeAllCredits()">Allen -1</button>
-        <button onclick="resetAllCredits()">Alle zurücksetzen</button>
+        <button onclick="confirmResetAllCredits()">Alle zurücksetzen</button>
     </div>
 
     <div class="right">
@@ -50,7 +50,7 @@
         <div class="bottom">
             <h1>Spielzeug-Ausleihe</h1>
             <div id="toyList" class="toy-list"></div>
-            <button onclick="resetAllToys()">Alle zurücksetzen</button>
+            <button onclick="confirmResetAllToys()">Alle zurücksetzen</button>
         </div>
     </div>
 </div>
@@ -97,6 +97,14 @@
         updateCreditsDisplay();
     }
 
+    function confirmResetAllCredits() {
+        if (confirm("Bist du sicher, dass du alle Credits zurücksetzen möchtest?")) {
+            if (confirm("Letzte Warnung! Möchtest du wirklich fortfahren?")) {
+                resetAllCredits();
+            }
+        }
+    }
+
     function resetAllCredits() {
         kids.forEach(kid => kid.credits = 0);
         updateCreditsDisplay();
@@ -136,6 +144,14 @@
         if (toy) {
             kids[index].toy = toy;
             updateToyList();
+        }
+    }
+
+    function confirmResetAllToys() {
+        if (confirm("Bist du sicher, dass du alle ausgeliehenen Spielzeuge zurücksetzen möchtest?")) {
+            if (confirm("Letzte Warnung! Möchtest du wirklich fortfahren?")) {
+                resetAllToys();
+            }
         }
     }
 
