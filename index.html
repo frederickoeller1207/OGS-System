@@ -3,167 +3,139 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Credits- & Ausleihsystem</title>
+    <title>Credit-System & Spielzeug-Ausleihe</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; background-color: green; color: white; display: flex; }
-        .container { display: flex; width: 100%; height: 100vh; }
-        .left, .right { flex: 1; padding: 10px; border: 2px solid white; }
-        .right { display: flex; flex-direction: column; }
-        .top, .bottom { flex: 1; padding: 10px; border-top: 2px solid white; overflow: auto; }
-        .credits-list { font-size: 25px; font-weight: bold; display: flex; flex-wrap: wrap; justify-content: center; }
-        .credits-item { margin: 5px; padding: 10px; border: 1px solid white; cursor: pointer; }
-        .popup { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; color: black; padding: 20px; display: none; font-size: 24px; }
-        .digital-clock { font-size: 40px; font-weight: bold; }
-        .toy-borrowed { color: red; font-size: 30px; font-weight: bold; }
+        body { font-family: Arial, sans-serif; text-align: center; background-color: green; color: white; display: flex; height: 100vh; }
+        .container { flex: 1; padding: 10px; border-right: 2px solid white; }
+        .half { width: 50%; float: left; }
+        .credits-list { display: flex; flex-wrap: wrap; justify-content: center; }
+        .name-box { margin: 5px; padding: 10px; background: gray; cursor: pointer; }
+        .popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; color: black; padding: 20px; display: none; border-radius: 10px; }
+        .popup button { margin: 5px; padding: 10px; }
+        .popup-close { background: red; color: white; cursor: pointer; }
         .toy-list { display: flex; flex-wrap: wrap; justify-content: center; }
-        .toy-list div { padding: 5px; border: 1px solid white; margin: 3px; cursor: pointer; }
+        .toy-box { margin: 5px; padding: 10px; background: lightgray; color: black; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <!-- Programm 1: Credit-System -->
-    <div class="left">
+    <!-- Credit System -->
+    <div class="container">
         <h1>Credit-System</h1>
-        <div id="creditsList" class="credits-list"></div>
-        <button onclick="giveAllCredits()">Allen +1</button>
-        <button onclick="removeAllCredits()">Allen -1</button>
-        <button onclick="confirmResetAllCredits()">Alle zurücksetzen</button>
+        <button onclick="changeAllCredits(1)">Allen +1</button>
+        <button onclick="changeAllCredits(-1)">Allen -1</button>
+        <button onclick="confirmReset()">Alle zurücksetzen</button>
+        <div id="credits" class="credits-list"></div>
     </div>
 
-    <div class="right">
-        <!-- Programm 2: Tagesablauf -->
-        <div class="top">
-            <h1>Tagesablauf</h1>
-            <select id="daySelect" onchange="updateSchedule()">
-                <option value="Montag">Montag</option>
-                <option value="Dienstag">Dienstag</option>
-                <option value="Mittwoch">Mittwoch</option>
-                <option value="Donnerstag">Donnerstag</option>
-                <option value="Freitag">Freitag</option>
-            </select>
-            <div class="digital-clock" id="clock"></div>
-            <div id="scheduleDisplay"></div>
-        </div>
-
-        <!-- Programm 3: Spielzeug-Ausleihe -->
-        <div class="bottom">
-            <h1>Spielzeug-Ausleihe</h1>
-            <div id="toyList" class="toy-list"></div>
-            <button onclick="confirmResetAllToys()">Alle zurücksetzen</button>
-        </div>
+    <!-- Spielzeug-Ausleihe -->
+    <div class="container">
+        <h1>Spielzeug-Ausleihe</h1>
+        <div id="toys" class="toy-list"></div>
     </div>
-</div>
 
-<!-- Pop-up -->
-<div id="popup" class="popup"></div>
+    <!-- Popup für Punktevergabe -->
+    <div id="popup" class="popup">
+        <h2 id="popup-name"></h2>
+        <button onclick="updateCredit(1)">+1</button>
+        <button onclick="updateCredit(-1)">-1</button>
+        <button class="popup-close" onclick="closePopup()">X</button>
+    </div>
 
-<script>
-    let kids = [
-        "Liam", "Irem", "Malin", "Leni", "Frida G.", "Lukas", "Niklas", "Frida R.", "Matthias", "Greta",
-        "Emilia", "Oskar", "Lotte", "David", "Max", "Ronja", "Romy", "Sophie", "Artur", "Zehra",
-        "Ismail", "Malick", "Nela", "Mia", "Jayden"
-    ].map(name => ({ name, credits: 0, toy: "" }));
+    <script>
+        let students = [
+            "Liam", "Irem", "Malin", "Leni", "Frida G.", "Lukas", "Niklas", "Frida R.", "Matthias", "Greta",
+            "Emilia", "Oskar", "Lotte", "David", "Max", "Ronja", "Romy", "Sophie", "Artur", "Zehra",
+            "Ismail", "Malick", "Nela", "Mia", "Jayden"
+        ];
 
-    function updateCreditsDisplay() {
-        let list = document.getElementById("creditsList");
-        list.innerHTML = "";
-        kids.forEach((kid, index) => {
-            list.innerHTML += `<div class="credits-item" onclick="showCreditOptions(${index})">${kid.name}: ${kid.credits} Credits</div>`;
-        });
-    }
+        let credits = JSON.parse(localStorage.getItem("credits")) || {};
+        students.forEach(name => { if (!(name in credits)) credits[name] = 0; });
 
-    function showCreditOptions(index) {
-        let popup = document.getElementById("popup");
-        popup.innerHTML = `<p>${kids[index].name} Credits ändern:</p>
-                           <button onclick="changeCredits(${index}, 1)">+1</button>
-                           <button onclick="changeCredits(${index}, -1)">-1</button>`;
-        popup.style.display = "block";
-        setTimeout(() => popup.style.display = "none", 3000);
-    }
+        let selectedStudent = null;
 
-    function changeCredits(index, amount) {
-        kids[index].credits += amount;
-        updateCreditsDisplay();
-    }
+        function saveCredits() {
+            localStorage.setItem("credits", JSON.stringify(credits));
+        }
 
-    function giveAllCredits() {
-        kids.forEach(kid => kid.credits++);
-        updateCreditsDisplay();
-    }
+        function updateUI() {
+            let creditsDiv = document.getElementById("credits");
+            creditsDiv.innerHTML = "";
+            students.forEach(name => {
+                let box = document.createElement("div");
+                box.classList.add("name-box");
+                box.innerText = `${name}: ${credits[name]} Credits`;
+                box.onclick = () => openPopup(name);
+                creditsDiv.appendChild(box);
+            });
+        }
 
-    function removeAllCredits() {
-        kids.forEach(kid => kid.credits--);
-        updateCreditsDisplay();
-    }
+        function openPopup(name) {
+            selectedStudent = name;
+            document.getElementById("popup-name").innerText = `${name}: ${credits[name]} Credits`;
+            document.getElementById("popup").style.display = "block";
+        }
 
-    function confirmResetAllCredits() {
-        if (confirm("Bist du sicher, dass du alle Credits zurücksetzen möchtest?")) {
-            if (confirm("Letzte Warnung! Möchtest du wirklich fortfahren?")) {
-                resetAllCredits();
+        function closePopup() {
+            document.getElementById("popup").style.display = "none";
+        }
+
+        function updateCredit(amount) {
+            if (selectedStudent) {
+                credits[selectedStudent] += amount;
+                saveCredits();
+                updateUI();
+                openPopup(selectedStudent);
             }
         }
-    }
 
-    function resetAllCredits() {
-        kids.forEach(kid => kid.credits = 0);
-        updateCreditsDisplay();
-    }
-
-    function updateSchedule() {
-        let day = document.getElementById("daySelect").value;
-        let schedule = {
-            Montag: "Spielzeit → Mittagessen → AG Angebote → Abholung",
-            Dienstag: "Sport → Mittagessen → Hausaufgaben → Abholung",
-            Mittwoch: "Musik → Mittagessen → Basteln → Abholung",
-            Donnerstag: "Freispiel → Mittagessen → Lesezeit → Abholung",
-            Freitag: "Kreativzeit → Mittagessen → Film → Abholung"
-        };
-        document.getElementById("scheduleDisplay").innerText = schedule[day];
-    }
-
-    function updateClock() {
-        let now = new Date();
-        let timeString = now.toLocaleTimeString("de-DE", { hour: '2-digit', minute: '2-digit' });
-        document.getElementById("clock").innerText = timeString;
-    }
-
-    setInterval(updateClock, 1000);
-
-    let toyList = document.getElementById("toyList");
-    function updateToyList() {
-        toyList.innerHTML = "";
-        kids.forEach((kid, index) => {
-            let displayName = kid.toy ? `<div class="toy-borrowed">${kid.name} → ${kid.toy}</div>` : `<div>${kid.name}</div>`;
-            toyList.innerHTML += `<div onclick="borrowToy(${index})">${displayName}</div>`;
-        });
-    }
-
-    function borrowToy(index) {
-        let toy = prompt("Welches Spielzeug wird ausgeliehen?");
-        if (toy) {
-            kids[index].toy = toy;
-            updateToyList();
+        function changeAllCredits(amount) {
+            students.forEach(name => credits[name] += amount);
+            saveCredits();
+            updateUI();
         }
-    }
 
-    function confirmResetAllToys() {
-        if (confirm("Bist du sicher, dass du alle ausgeliehenen Spielzeuge zurücksetzen möchtest?")) {
-            if (confirm("Letzte Warnung! Möchtest du wirklich fortfahren?")) {
-                resetAllToys();
+        function confirmReset() {
+            if (confirm("Bist du sicher, dass du alle Credits zurücksetzen möchtest?")) {
+                if (confirm("Wirklich alle Credits zurücksetzen?")) {
+                    students.forEach(name => credits[name] = 0);
+                    saveCredits();
+                    updateUI();
+                }
             }
         }
-    }
 
-    function resetAllToys() {
-        kids.forEach(kid => kid.toy = "");
-        updateToyList();
-    }
+        // Spielzeug-Ausleihe
+        let toyData = JSON.parse(localStorage.getItem("toyData")) || {};
 
-    updateCreditsDisplay();
-    updateSchedule();
-    updateToyList();
-</script>
+        function updateToyUI() {
+            let toyDiv = document.getElementById("toys");
+            toyDiv.innerHTML = "";
+            students.forEach(name => {
+                let box = document.createElement("div");
+                box.classList.add("toy-box");
+                box.innerText = toyData[name] ? `${name} hat ausgeliehen: ${toyData[name]}` : name;
+                box.onclick = () => borrowToy(name);
+                toyDiv.appendChild(box);
+            });
+        }
+
+        function borrowToy(name) {
+            let toy = prompt("Welches Spielzeug wird ausgeliehen?", toyData[name] || "");
+            if (toy !== null) {
+                if (toy === "") {
+                    delete toyData[name];
+                } else {
+                    toyData[name] = toy;
+                }
+                localStorage.setItem("toyData", JSON.stringify(toyData));
+                updateToyUI();
+            }
+        }
+
+        updateUI();
+        updateToyUI();
+    </script>
 
 </body>
 </html>
