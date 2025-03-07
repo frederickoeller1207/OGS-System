@@ -15,7 +15,8 @@
         .popup { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; color: black; padding: 20px; display: none; font-size: 24px; }
         .digital-clock { font-size: 40px; font-weight: bold; }
         .toy-borrowed { color: red; font-size: 30px; font-weight: bold; }
-        .toy-list div { padding: 5px; border-bottom: 1px solid white; }
+        .toy-list { display: flex; flex-wrap: wrap; justify-content: center; }
+        .toy-list div { padding: 5px; border: 1px solid white; margin: 3px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -26,6 +27,8 @@
         <h1>Credit-System</h1>
         <div id="creditsList" class="credits-list"></div>
         <button onclick="giveAllCredits()">Allen +1</button>
+        <button onclick="removeAllCredits()">Allen -1</button>
+        <button onclick="resetAllCredits()">Alle zurücksetzen</button>
     </div>
 
     <div class="right">
@@ -47,6 +50,7 @@
         <div class="bottom">
             <h1>Spielzeug-Ausleihe</h1>
             <div id="toyList" class="toy-list"></div>
+            <button onclick="resetAllToys()">Alle zurücksetzen</button>
         </div>
     </div>
 </div>
@@ -88,6 +92,16 @@
         updateCreditsDisplay();
     }
 
+    function removeAllCredits() {
+        kids.forEach(kid => kid.credits--);
+        updateCreditsDisplay();
+    }
+
+    function resetAllCredits() {
+        kids.forEach(kid => kid.credits = 0);
+        updateCreditsDisplay();
+    }
+
     function updateSchedule() {
         let day = document.getElementById("daySelect").value;
         let schedule = {
@@ -123,6 +137,11 @@
             kids[index].toy = toy;
             updateToyList();
         }
+    }
+
+    function resetAllToys() {
+        kids.forEach(kid => kid.toy = "");
+        updateToyList();
     }
 
     updateCreditsDisplay();
