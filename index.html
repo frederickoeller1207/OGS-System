@@ -3,30 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Punkte- & Ausleihsystem</title>
+    <title>Credits- & Ausleihsystem</title>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; background-color: green; color: white; display: flex; }
         .container { display: flex; width: 100%; height: 100vh; }
         .left, .right { flex: 1; padding: 10px; border: 2px solid white; }
         .right { display: flex; flex-direction: column; }
-        .top, .bottom { flex: 1; padding: 10px; border-top: 2px solid white; }
-        .points-list { font-size: 30px; font-weight: bold; }
-        .small-list { font-size: 20px; }
+        .top, .bottom { flex: 1; padding: 10px; border-top: 2px solid white; overflow: auto; }
+        .credits-list { font-size: 25px; font-weight: bold; display: flex; flex-wrap: wrap; justify-content: center; }
+        .credits-item { margin: 5px; padding: 10px; border: 1px solid white; cursor: pointer; }
         .popup { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; color: black; padding: 20px; display: none; font-size: 24px; }
-        .highlight { font-size: 50px; font-weight: bold; }
         .digital-clock { font-size: 40px; font-weight: bold; }
         .toy-borrowed { color: red; font-size: 30px; font-weight: bold; }
+        .toy-list div { padding: 5px; border-bottom: 1px solid white; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <!-- Programm 1: Punktesystem -->
+    <!-- Programm 1: Credit-System -->
     <div class="left">
-        <h1>Punkte-System</h1>
-        <div id="pointsDisplay" class="points-list"></div>
-        <div id="smallList" class="small-list"></div>
-        <button onclick="giveAllPoints()">Allen +1</button>
+        <h1>Credit-System</h1>
+        <div id="creditsList" class="credits-list"></div>
+        <button onclick="giveAllCredits()">Allen +1</button>
     </div>
 
     <div class="right">
@@ -47,7 +46,7 @@
         <!-- Programm 3: Spielzeug-Ausleihe -->
         <div class="bottom">
             <h1>Spielzeug-Ausleihe</h1>
-            <div id="toyList"></div>
+            <div id="toyList" class="toy-list"></div>
         </div>
     </div>
 </div>
@@ -60,43 +59,33 @@
         "Liam", "Irem", "Malin", "Leni", "Frida G.", "Lukas", "Niklas", "Frida R.", "Matthias", "Greta",
         "Emilia", "Oskar", "Lotte", "David", "Max", "Ronja", "Romy", "Sophie", "Artur", "Zehra",
         "Ismail", "Malick", "Nela", "Mia", "Jayden"
-    ].map(name => ({ name, points: 0 }));
+    ].map(name => ({ name, credits: 0, toy: "" }));
 
-    function updatePointsDisplay() {
-        let display = document.getElementById("pointsDisplay");
-        display.innerHTML = "";
-        let sortedKids = [...kids].sort((a, b) => b.points - a.points);
-        let top5 = sortedKids.slice(0, 5);
-
-        top5.forEach((kid, index) => {
-            let colors = ["red", "blue", "yellow", "purple", "orange"];
-            display.innerHTML += `<div class="highlight" style="color:${colors[index % colors.length]}">${kid.name}: ${kid.points} Punkte</div>`;
-        });
-
-        let smallList = document.getElementById("smallList");
-        smallList.innerHTML = "";
+    function updateCreditsDisplay() {
+        let list = document.getElementById("creditsList");
+        list.innerHTML = "";
         kids.forEach((kid, index) => {
-            smallList.innerHTML += `<div onclick="showPointOptions(${index})">${kid.name}: ${kid.points} Punkte</div>`;
+            list.innerHTML += `<div class="credits-item" onclick="showCreditOptions(${index})">${kid.name}: ${kid.credits} Credits</div>`;
         });
     }
 
-    function showPointOptions(index) {
+    function showCreditOptions(index) {
         let popup = document.getElementById("popup");
-        popup.innerHTML = `<p>${kids[index].name} Punkt ändern:</p>
-                           <button onclick="changePoints(${index}, 1)">+1</button>
-                           <button onclick="changePoints(${index}, -1)">-1</button>`;
+        popup.innerHTML = `<p>${kids[index].name} Credits ändern:</p>
+                           <button onclick="changeCredits(${index}, 1)">+1</button>
+                           <button onclick="changeCredits(${index}, -1)">-1</button>`;
         popup.style.display = "block";
         setTimeout(() => popup.style.display = "none", 3000);
     }
 
-    function changePoints(index, amount) {
-        kids[index].points += amount;
-        updatePointsDisplay();
+    function changeCredits(index, amount) {
+        kids[index].credits += amount;
+        updateCreditsDisplay();
     }
 
-    function giveAllPoints() {
-        kids.forEach(kid => kid.points++);
-        updatePointsDisplay();
+    function giveAllCredits() {
+        kids.forEach(kid => kid.credits++);
+        updateCreditsDisplay();
     }
 
     function updateSchedule() {
@@ -120,9 +109,13 @@
     setInterval(updateClock, 1000);
 
     let toyList = document.getElementById("toyList");
-    kids.forEach((kid, index) => {
-        toyList.innerHTML += `<div onclick="borrowToy(${index})">${kid.name}</div>`;
-    });
+    function updateToyList() {
+        toyList.innerHTML = "";
+        kids.forEach((kid, index) => {
+            let displayName = kid.toy ? `<div class="toy-borrowed">${kid.name} → ${kid.toy}</div>` : `<div>${kid.name}</div>`;
+            toyList.innerHTML += `<div onclick="borrowToy(${index})">${displayName}</div>`;
+        });
+    }
 
     function borrowToy(index) {
         let toy = prompt("Welches Spielzeug wird ausgeliehen?");
@@ -132,16 +125,9 @@
         }
     }
 
-    function updateToyList() {
-        toyList.innerHTML = "";
-        kids.forEach(kid => {
-            toyList.innerHTML += `<div class="${kid.toy ? 'toy-borrowed' : ''}" onclick="borrowToy(${kids.indexOf(kid)})">${kid.name} ${kid.toy ? `→ ${kid.toy}` : ""}</div>`;
-        });
-    }
-
-    setInterval(updatePointsDisplay, 10000);
-    updatePointsDisplay();
+    updateCreditsDisplay();
     updateSchedule();
+    updateToyList();
 </script>
 
 </body>
