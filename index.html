@@ -7,7 +7,6 @@
     <style>
         body { font-family: Arial, sans-serif; text-align: center; background-color: green; color: white; display: flex; height: 100vh; }
         .container { flex: 1; padding: 10px; border-right: 2px solid white; }
-        .half { width: 50%; float: left; }
         .credits-list { display: flex; flex-wrap: wrap; justify-content: center; }
         .name-box { margin: 5px; padding: 10px; background: gray; cursor: pointer; }
         .popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; color: black; padding: 20px; display: none; border-radius: 10px; }
@@ -15,6 +14,7 @@
         .popup-close { background: red; color: white; cursor: pointer; }
         .toy-list { display: flex; flex-wrap: wrap; justify-content: center; }
         .toy-box { margin: 5px; padding: 10px; background: lightgray; color: black; }
+        .borrowed { color: red; font-weight: bold; } /* NEU: Ausgeliehene Spielzeuge werden ROT dargestellt */
     </style>
 </head>
 <body>
@@ -114,7 +114,12 @@
             students.forEach(name => {
                 let box = document.createElement("div");
                 box.classList.add("toy-box");
-                box.innerText = toyData[name] ? `${name} hat ausgeliehen: ${toyData[name]}` : name;
+                if (toyData[name]) {
+                    box.classList.add("borrowed"); // Name wird rot, wenn ausgeliehen
+                    box.innerText = `${name} hat ausgeliehen: ${toyData[name]}`;
+                } else {
+                    box.innerText = name;
+                }
                 box.onclick = () => borrowToy(name);
                 toyDiv.appendChild(box);
             });
