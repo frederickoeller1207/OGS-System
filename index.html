@@ -3,46 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Punkte- und Ausleihsystem</title>
+    <title>Punkte- & Ausleihsystem</title>
     <style>
-        body { display: flex; height: 100vh; margin: 0; font-family: Arial, sans-serif; background-color: green; color: white; }
-        .container { display: flex; width: 100%; }
-        .left, .right { flex: 1; padding: 10px; }
-        .top, .bottom { width: 100%; }
+        body { font-family: Arial, sans-serif; text-align: center; background-color: green; color: white; display: flex; }
+        .container { display: flex; width: 100%; height: 100vh; }
+        .left, .right { flex: 1; padding: 10px; border: 2px solid white; }
         .right { display: flex; flex-direction: column; }
-        .top { flex: 1; text-align: center; }
-        .bottom { flex: 1; text-align: center; }
-        .scoreboard { font-size: 24px; }
-        .name-list { display: flex; flex-wrap: wrap; justify-content: center; }
-        .name { margin: 5px; padding: 5px 10px; cursor: pointer; border-radius: 5px; }
-        .popup { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; color: black; padding: 20px; border-radius: 5px; font-size: 24px; display: none; }
-        .clock { font-size: 30px; font-weight: bold; margin-top: -10px; }
-        .toy-list { display: flex; flex-wrap: wrap; justify-content: center; }
-        .toy-item { margin: 5px; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
-        .borrowed { color: red; font-size: 24px; }
+        .top, .bottom { flex: 1; padding: 10px; border-top: 2px solid white; }
+        .points-list { font-size: 30px; font-weight: bold; }
+        .small-list { font-size: 20px; }
+        .popup { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; color: black; padding: 20px; display: none; font-size: 24px; }
+        .highlight { font-size: 50px; font-weight: bold; }
+        .digital-clock { font-size: 40px; font-weight: bold; }
+        .toy-borrowed { color: red; font-size: 30px; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
+    <!-- Programm 1: Punktesystem -->
     <div class="left">
-        <h1>Punktesystem</h1>
-        <div id="topFive" class="scoreboard"></div>
-        <div class="name-list" id="allNames"></div>
+        <h1>Punkte-System</h1>
+        <div id="pointsDisplay" class="points-list"></div>
+        <div id="smallList" class="small-list"></div>
+        <button onclick="giveAllPoints()">Allen +1</button>
     </div>
 
     <div class="right">
+        <!-- Programm 2: Tagesablauf -->
         <div class="top">
-            <h1>Tagesablauf <span class="clock" id="clock"></span></h1>
-            <div id="schedule"></div>
+            <h1>Tagesablauf</h1>
+            <select id="daySelect" onchange="updateSchedule()">
+                <option value="Montag">Montag</option>
+                <option value="Dienstag">Dienstag</option>
+                <option value="Mittwoch">Mittwoch</option>
+                <option value="Donnerstag">Donnerstag</option>
+                <option value="Freitag">Freitag</option>
+            </select>
+            <div class="digital-clock" id="clock"></div>
+            <div id="scheduleDisplay"></div>
         </div>
+
+        <!-- Programm 3: Spielzeug-Ausleihe -->
         <div class="bottom">
             <h1>Spielzeug-Ausleihe</h1>
-            <div class="toy-list" id="toyList"></div>
+            <div id="toyList"></div>
         </div>
     </div>
 </div>
 
+<!-- Pop-up -->
 <div id="popup" class="popup"></div>
 
 <script>
@@ -52,92 +62,86 @@
         "Ismail", "Malick", "Nela", "Mia", "Jayden"
     ].map(name => ({ name, points: 0 }));
 
-    let toys = [];
-    let colors = ["red", "blue", "orange", "purple", "yellow", "cyan", "pink"];
-    let topFiveIndex = 0;
+    function updatePointsDisplay() {
+        let display = document.getElementById("pointsDisplay");
+        display.innerHTML = "";
+        let sortedKids = [...kids].sort((a, b) => b.points - a.points);
+        let top5 = sortedKids.slice(0, 5);
 
-    function saveData() {
-        localStorage.setItem("kids", JSON.stringify(kids));
-        localStorage.setItem("toys", JSON.stringify(toys));
-    }
-
-    function loadData() {
-        let storedKids = JSON.parse(localStorage.getItem("kids"));
-        let storedToys = JSON.parse(localStorage.getItem("toys"));
-        if (storedKids) kids = storedKids;
-        if (storedToys) toys = storedToys;
-    }
-
-    function updateScoreboard() {
-        kids.sort((a, b) => b.points - a.points);
-        let topFiveHTML = "";
-        for (let i = 0; i < 5; i++) {
-            if (kids[i]) {
-                topFiveHTML += `<div style="color: ${colors[i % colors.length]}; font-size: 30px;">${kids[i].name}: ${kids[i].points} Punkte</div>`;
-            }
-        }
-        document.getElementById("topFive").innerHTML = topFiveHTML;
-
-        let allNamesHTML = "";
-        kids.forEach((kid, index) => {
-            allNamesHTML += `<div class="name" style="background-color: ${colors[index % colors.length]};" onclick="givePoint(${index})">${kid.name}</div>`;
+        top5.forEach((kid, index) => {
+            let colors = ["red", "blue", "yellow", "purple", "orange"];
+            display.innerHTML += `<div class="highlight" style="color:${colors[index % colors.length]}">${kid.name}: ${kid.points} Punkte</div>`;
         });
-        document.getElementById("allNames").innerHTML = allNamesHTML;
+
+        let smallList = document.getElementById("smallList");
+        smallList.innerHTML = "";
+        kids.forEach((kid, index) => {
+            smallList.innerHTML += `<div onclick="showPointOptions(${index})">${kid.name}: ${kid.points} Punkte</div>`;
+        });
     }
 
-    function givePoint(index) {
-        kids[index].points++;
-        saveData();
-        updateScoreboard();
-        showPopup(`${kids[index].name} hat einen Punkt bekommen!`);
-    }
-
-    function showPopup(message) {
+    function showPointOptions(index) {
         let popup = document.getElementById("popup");
-        popup.innerText = message;
+        popup.innerHTML = `<p>${kids[index].name} Punkt ändern:</p>
+                           <button onclick="changePoints(${index}, 1)">+1</button>
+                           <button onclick="changePoints(${index}, -1)">-1</button>`;
         popup.style.display = "block";
-        setTimeout(() => { popup.style.display = "none"; }, 3000);
+        setTimeout(() => popup.style.display = "none", 3000);
+    }
+
+    function changePoints(index, amount) {
+        kids[index].points += amount;
+        updatePointsDisplay();
+    }
+
+    function giveAllPoints() {
+        kids.forEach(kid => kid.points++);
+        updatePointsDisplay();
+    }
+
+    function updateSchedule() {
+        let day = document.getElementById("daySelect").value;
+        let schedule = {
+            Montag: "Spielzeit → Mittagessen → AG Angebote → Abholung",
+            Dienstag: "Sport → Mittagessen → Hausaufgaben → Abholung",
+            Mittwoch: "Musik → Mittagessen → Basteln → Abholung",
+            Donnerstag: "Freispiel → Mittagessen → Lesezeit → Abholung",
+            Freitag: "Kreativzeit → Mittagessen → Film → Abholung"
+        };
+        document.getElementById("scheduleDisplay").innerText = schedule[day];
     }
 
     function updateClock() {
         let now = new Date();
-        let timeString = now.toLocaleTimeString("de-DE", { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        let timeString = now.toLocaleTimeString("de-DE", { hour: '2-digit', minute: '2-digit' });
         document.getElementById("clock").innerText = timeString;
-        setTimeout(updateClock, 1000);
     }
 
-    function updateToyList() {
-        let toyHTML = "";
-        kids.forEach((kid, index) => {
-            let borrowedToy = toys.find(t => t.name === kid.name);
-            toyHTML += `<div class="toy-item" onclick="borrowToy(${index})">
-                ${kid.name} ${borrowedToy ? `<span class="borrowed">${borrowedToy.toy}</span>` : ""}
-            </div>`;
-        });
-        document.getElementById("toyList").innerHTML = toyHTML;
-    }
+    setInterval(updateClock, 1000);
+
+    let toyList = document.getElementById("toyList");
+    kids.forEach((kid, index) => {
+        toyList.innerHTML += `<div onclick="borrowToy(${index})">${kid.name}</div>`;
+    });
 
     function borrowToy(index) {
-        let toy = prompt(`Welches Spielzeug leiht sich ${kids[index].name} aus?`);
+        let toy = prompt("Welches Spielzeug wird ausgeliehen?");
         if (toy) {
-            toys = toys.filter(t => t.name !== kids[index].name);
-            toys.push({ name: kids[index].name, toy });
-            saveData();
+            kids[index].toy = toy;
             updateToyList();
         }
     }
 
-    function switchTopFive() {
-        topFiveIndex = (topFiveIndex + 5) % kids.length;
-        updateScoreboard();
-        setTimeout(switchTopFive, 10000);
+    function updateToyList() {
+        toyList.innerHTML = "";
+        kids.forEach(kid => {
+            toyList.innerHTML += `<div class="${kid.toy ? 'toy-borrowed' : ''}" onclick="borrowToy(${kids.indexOf(kid)})">${kid.name} ${kid.toy ? `→ ${kid.toy}` : ""}</div>`;
+        });
     }
 
-    loadData();
-    updateScoreboard();
-    updateToyList();
-    updateClock();
-    switchTopFive();
+    setInterval(updatePointsDisplay, 10000);
+    updatePointsDisplay();
+    updateSchedule();
 </script>
 
 </body>
