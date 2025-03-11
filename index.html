@@ -5,139 +5,41 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Credit-System & Spielzeug-Ausleihe</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            display: flex;
-            height: 100vh;
-            background-color: #f0f0f0;
-        }
-
-        .container {
-            width: 100%;
-            height: 100%;
-            display: flex;
-        }
-
-        /* Linke Seite - Credit-System */
-        .left-container {
-            flex: 1;
-            background-color: #2E8B57;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-            color: white;
-        }
-
-        .credits-list {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            width: 100%;
-        }
-
-        .name-box {
-            margin: 5px;
-            padding: 20px;
-            background: #4CAF50;
-            cursor: pointer;
-            width: 180px;
-            text-align: center;
-            font-size: 24px;
-            font-weight: bold;
-            color: white;
-            border-radius: 10px;
-        }
-
-        .popup {
-            display: none;
-            position: absolute;
-            background: white;
-            padding: 10px;
-            border: 2px solid black;
-            z-index: 1000;
-        }
-
-        .popup button {
-            margin: 5px;
-            padding: 10px;
-            cursor: pointer;
-        }
-
-        .close-popup {
-            float: right;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        .button-container {
-            margin-top: 10px;
-        }
-
-        .button-container button {
-            padding: 10px;
-            margin: 5px;
-            cursor: pointer;
-        }
-
-        /* Rechte Seite - Nur Spielzeug-Ausleihe */
-        .right-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            padding: 20px;
-        }
-
-        /* Spielzeug-Ausleihe */
-        .toy-container {
-            display: flex;
-            flex-wrap: wrap;
-            background-color: #006400;
-            padding: 10px;
-            align-content: flex-start;
-            justify-content: flex-start;
-            height: 100%;
-            overflow: hidden;
-        }
-
-        .toy-box {
-            margin: 5px;
-            padding: 15px;
-            background: lightgray;
-            color: black;
-            width: calc(16.66% - 10px);
-            text-align: center;
-            font-size: 18px;
-            border-radius: 10px;
-            cursor: pointer;
-        }
+        body { font-family: Arial, sans-serif; text-align: center; background-color: green; color: white; display: flex; height: 100vh; }
+        .container { flex: 1; padding: 10px; border-right: 2px solid white; }
+        .credits-list { display: flex; flex-wrap: wrap; justify-content: center; }
+        .name-box { margin: 5px; padding: 10px; background: gray; cursor: pointer; }
+        .popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; color: black; padding: 20px; display: none; border-radius: 10px; }
+        .popup button { margin: 5px; padding: 10px; }
+        .popup-close { background: red; color: white; cursor: pointer; }
+        .toy-list { display: flex; flex-wrap: wrap; justify-content: center; }
+        .toy-box { margin: 5px; padding: 10px; background: lightgray; color: black; }
+        .borrowed { color: red; font-weight: bold; } /* NEU: Ausgeliehene Spielzeuge werden ROT dargestellt */
     </style>
 </head>
 <body>
 
+    <!-- Credit System -->
     <div class="container">
-        <!-- Linke Seite - Credit System -->
-        <div class="left-container">
-            <h1>Credit-System</h1>
-            <div class="button-container">
-                <button onclick="allPlusOne()">Alle +1</button>
-                <button onclick="allMinusOne()">Alle -1</button>
-            </div>
-            <div id="credits" class="credits-list"></div>
-        </div>
-
-        <!-- Rechte Seite - Nur Spielzeug-Ausleihe -->
-        <div class="right-container">
-            <div class="toy-container" id="toys"></div>
-        </div>
+        <h1>Credit-System</h1>
+        <button onclick="changeAllCredits(1)">Allen +1</button>
+        <button onclick="changeAllCredits(-1)">Allen -1</button>
+        <button onclick="confirmReset()">Alle zurücksetzen</button>
+        <div id="credits" class="credits-list"></div>
     </div>
 
+    <!-- Spielzeug-Ausleihe -->
+    <div class="container">
+        <h1>Spielzeug-Ausleihe</h1>
+        <div id="toys" class="toy-list"></div>
+    </div>
+
+    <!-- Popup für Punktevergabe -->
     <div id="popup" class="popup">
-        <span class="close-popup" onclick="closePopup()">X</span>
-        <p id="popup-text"></p>
-        <button onclick="adjustCredit(1)">+1</button>
-        <button onclick="adjustCredit(-1)">-1</button>
+        <h2 id="popup-name"></h2>
+        <button onclick="updateCredit(1)">+1</button>
+        <button onclick="updateCredit(-1)">-1</button>
+        <button class="popup-close" onclick="closePopup()">X</button>
     </div>
 
     <script>
@@ -146,51 +48,65 @@
             "Emilia", "Oskar", "Lotte", "David", "Max", "Ronja", "Romy", "Sophie", "Artur", "Zehra",
             "Ismail", "Malick", "Nela", "Mia", "Jayden"
         ];
-        
-        let credits = {};
-        let popup = document.getElementById("popup");
-        let selectedStudent = "";
 
-        students.forEach(name => credits[name] = 0);
+        let credits = JSON.parse(localStorage.getItem("credits")) || {};
+        students.forEach(name => { if (!(name in credits)) credits[name] = 0; });
 
-        function updateCreditsUI() {
+        let selectedStudent = null;
+
+        function saveCredits() {
+            localStorage.setItem("credits", JSON.stringify(credits));
+        }
+
+        function updateUI() {
             let creditsDiv = document.getElementById("credits");
             creditsDiv.innerHTML = "";
             students.forEach(name => {
                 let box = document.createElement("div");
                 box.classList.add("name-box");
-                box.innerText = `${name}: ${credits[name]}`;
-                box.onclick = () => showPopup(name);
+                box.innerText = `${name}: ${credits[name]} Credits`;
+                box.onclick = () => openPopup(name);
                 creditsDiv.appendChild(box);
             });
         }
 
-        function showPopup(name) {
+        function openPopup(name) {
             selectedStudent = name;
-            document.getElementById("popup-text").innerText = `Punkte für ${name}`;
-            popup.style.display = "block";
+            document.getElementById("popup-name").innerText = `${name}: ${credits[name]} Credits`;
+            document.getElementById("popup").style.display = "block";
         }
 
         function closePopup() {
-            popup.style.display = "none";
+            document.getElementById("popup").style.display = "none";
         }
 
-        function adjustCredit(amount) {
+        function updateCredit(amount) {
             if (selectedStudent) {
                 credits[selectedStudent] += amount;
-                updateCreditsUI();
+                saveCredits();
+                updateUI();
+                openPopup(selectedStudent);
             }
         }
 
-        function allPlusOne() {
-            students.forEach(name => credits[name] += 1);
-            updateCreditsUI();
+        function changeAllCredits(amount) {
+            students.forEach(name => credits[name] += amount);
+            saveCredits();
+            updateUI();
         }
 
-        function allMinusOne() {
-            students.forEach(name => credits[name] -= 1);
-            updateCreditsUI();
+        function confirmReset() {
+            if (confirm("Bist du sicher, dass du alle Credits zurücksetzen möchtest?")) {
+                if (confirm("Wirklich alle Credits zurücksetzen?")) {
+                    students.forEach(name => credits[name] = 0);
+                    saveCredits();
+                    updateUI();
+                }
+            }
         }
+
+        // Spielzeug-Ausleihe
+        let toyData = JSON.parse(localStorage.getItem("toyData")) || {};
 
         function updateToyUI() {
             let toyDiv = document.getElementById("toys");
@@ -198,13 +114,31 @@
             students.forEach(name => {
                 let box = document.createElement("div");
                 box.classList.add("toy-box");
-                box.innerText = name;
-                box.onclick = () => alert(name + " hat ein Spielzeug!");
+                if (toyData[name]) {
+                    box.classList.add("borrowed"); // Name wird rot, wenn ausgeliehen
+                    box.innerText = `${name} hat ausgeliehen: ${toyData[name]}`;
+                } else {
+                    box.innerText = name;
+                }
+                box.onclick = () => borrowToy(name);
                 toyDiv.appendChild(box);
             });
         }
 
-        updateCreditsUI();
+        function borrowToy(name) {
+            let toy = prompt("Welches Spielzeug wird ausgeliehen?", toyData[name] || "");
+            if (toy !== null) {
+                if (toy === "") {
+                    delete toyData[name];
+                } else {
+                    toyData[name] = toy;
+                }
+                localStorage.setItem("toyData", JSON.stringify(toyData));
+                updateToyUI();
+            }
+        }
+
+        updateUI();
         updateToyUI();
     </script>
 
