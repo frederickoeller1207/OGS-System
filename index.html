@@ -13,7 +13,6 @@
             background-color: #f0f0f0;
         }
 
-        /* Container, um das Layout im 16:9-Verhältnis zu halten */
         .container {
             width: 100%;
             height: 100%;
@@ -25,9 +24,14 @@
             background-color: #2E8B57;
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
             padding: 20px;
+        }
+
+        .button-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
         }
 
         .credits-list {
@@ -39,17 +43,17 @@
 
         .name-box {
             margin: 5px;
-            padding: 15px;
+            padding: 20px;
             background: #4CAF50;
             cursor: pointer;
-            width: 150px;
+            width: 180px;
             text-align: center;
-            font-size: 20px; /* Größere Schrift für bessere Lesbarkeit */
+            font-size: 24px; /* Größere Schrift */
+            font-weight: bold;
             color: white;
             border-radius: 10px;
         }
 
-        /* Rechte Seite - Spielzeug-Ausleihe und Tagesablauf */
         .right-container {
             flex: 1;
             display: flex;
@@ -58,15 +62,14 @@
             padding: 20px;
         }
 
-        /* Spielzeug-Ausleihe - obere rechte Seite */
         .toy-container {
             display: flex;
             flex-wrap: wrap;
-            justify-content: space-between; /* Namen nebeneinander */
+            justify-content: space-between;
             background-color: #006400;
             padding: 10px;
             margin-bottom: 10px;
-            height: 50%; /* Passt auf die Hälfte der rechten Seite */
+            height: 50%;
         }
 
         .toy-box {
@@ -76,52 +79,39 @@
             color: black;
             width: 120px;
             text-align: center;
-            font-size: 18px; /* Schriftgröße für bessere Lesbarkeit */
+            font-size: 20px;
+            font-weight: bold;
             border-radius: 10px;
         }
 
         .borrowed {
             color: red;
-            font-weight: bold;
         }
 
-        /* Tagesablauf - untere rechte Seite */
         .schedule-container {
-            background-color: #8B4513;
-            height: 50%; /* Passt auf die untere Hälfte der rechten Seite */
+            height: 50%;
             display: flex;
             justify-content: center;
             align-items: center;
+            position: relative;
         }
 
         #tagesbild {
-            width: 80%; /* Bildgröße angepasst, um Platz zu sparen */
+            width: 80%;
             height: auto;
             border-radius: 10px;
         }
 
-        /* Popup für Punktevergabe */
-        .popup {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
+        .clock {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 24px;
+            font-weight: bold;
             color: black;
-            padding: 20px;
-            display: none;
-            border-radius: 10px;
-        }
-
-        .popup button {
-            margin: 5px;
-            padding: 10px;
-        }
-
-        .popup-close {
-            background: red;
-            color: white;
-            cursor: pointer;
+            background: white;
+            padding: 5px 10px;
+            border-radius: 5px;
         }
 
     </style>
@@ -129,52 +119,36 @@
 <body>
 
     <div class="container">
-        <!-- Linke Seite - Credit System -->
         <div class="left-container">
             <h1>Credit-System</h1>
-            <button onclick="changeAllCredits(1)">Allen +1</button>
-            <button onclick="changeAllCredits(-1)">Allen -1</button>
-            <button onclick="confirmReset()">Alle zurücksetzen</button>
+            <div class="button-container">
+                <button onclick="changeAllCredits(1)">Allen +1</button>
+                <button onclick="changeAllCredits(-1)">Allen -1</button>
+                <button onclick="confirmReset()">Alle zurücksetzen</button>
+            </div>
             <div id="credits" class="credits-list"></div>
         </div>
 
-        <!-- Rechte Seite -->
         <div class="right-container">
-
-            <!-- Spielzeug-Ausleihe - Oben rechts -->
             <div class="toy-container">
                 <h1>Spielzeug-Ausleihe</h1>
                 <div id="toys" class="toy-list"></div>
             </div>
 
-            <!-- Tagesablauf - Unten rechts -->
             <div class="schedule-container">
+                <div class="clock" id="clock"></div>
                 <img id="tagesbild" src="freizeit.png" alt="Tagesbild">
             </div>
-
         </div>
     </div>
 
-    <!-- Popup für Punktevergabe -->
-    <div id="popup" class="popup">
-        <h2 id="popup-name"></h2>
-        <button onclick="updateCredit(1)">+1</button>
-        <button onclick="updateCredit(-1)">-1</button>
-        <button class="popup-close" onclick="closePopup()">X</button>
-    </div>
-
     <script>
-        // Credit-System
-        let students = [
-            "Liam", "Irem", "Malin", "Leni", "Frida G.", "Lukas", "Niklas", "Frida R.", "Matthias", "Greta",
-            "Emilia", "Oskar", "Lotte", "David", "Max", "Ronja", "Romy", "Sophie", "Artur", "Zehra",
-            "Ismail", "Malick", "Nela", "Mia", "Jayden"
-        ];
+        let students = ["Liam", "Irem", "Malin", "Leni", "Frida G.", "Lukas", "Niklas", "Frida R.", "Matthias", "Greta",
+                        "Emilia", "Oskar", "Lotte", "David", "Max", "Ronja", "Romy", "Sophie", "Artur", "Zehra",
+                        "Ismail", "Malick", "Nela", "Mia", "Jayden"];
 
         let credits = JSON.parse(localStorage.getItem("credits")) || {};
         students.forEach(name => { if (!(name in credits)) credits[name] = 0; });
-
-        let selectedStudent = null;
 
         function saveCredits() {
             localStorage.setItem("credits", JSON.stringify(credits));
@@ -186,29 +160,16 @@
             students.forEach(name => {
                 let box = document.createElement("div");
                 box.classList.add("name-box");
-                box.innerText = `${name}: ${credits[name]} Credits`;
-                box.onclick = () => openPopup(name);
+                box.innerText = `${name}: ${credits[name]}`;
+                box.onclick = () => updateCredit(name, 1);
                 creditsDiv.appendChild(box);
             });
         }
 
-        function openPopup(name) {
-            selectedStudent = name;
-            document.getElementById("popup-name").innerText = `${name}: ${credits[name]} Credits`;
-            document.getElementById("popup").style.display = "block";
-        }
-
-        function closePopup() {
-            document.getElementById("popup").style.display = "none";
-        }
-
-        function updateCredit(amount) {
-            if (selectedStudent) {
-                credits[selectedStudent] += amount;
-                saveCredits();
-                updateUI();
-                openPopup(selectedStudent);
-            }
+        function updateCredit(name, amount) {
+            credits[name] += amount;
+            saveCredits();
+            updateUI();
         }
 
         function changeAllCredits(amount) {
@@ -218,16 +179,13 @@
         }
 
         function confirmReset() {
-            if (confirm("Bist du sicher, dass du alle Credits zurücksetzen möchtest?")) {
-                if (confirm("Wirklich alle Credits zurücksetzen?")) {
-                    students.forEach(name => credits[name] = 0);
-                    saveCredits();
-                    updateUI();
-                }
+            if (confirm("Wirklich alle Credits zurücksetzen?")) {
+                students.forEach(name => credits[name] = 0);
+                saveCredits();
+                updateUI();
             }
         }
 
-        // Spielzeug-Ausleihe
         let toyData = JSON.parse(localStorage.getItem("toyData")) || {};
 
         function updateToyUI() {
@@ -237,8 +195,8 @@
                 let box = document.createElement("div");
                 box.classList.add("toy-box");
                 if (toyData[name]) {
-                    box.classList.add("borrowed"); // Name wird rot, wenn ausgeliehen
-                    box.innerText = `${name} hat ausgeliehen: ${toyData[name]}`;
+                    box.classList.add("borrowed");
+                    box.innerText = `${name} → ${toyData[name]}`;
                 } else {
                     box.innerText = name;
                 }
@@ -260,6 +218,15 @@
             }
         }
 
+        function updateClock() {
+            let now = new Date();
+            let hours = now.getHours().toString().padStart(2, '0');
+            let minutes = now.getMinutes().toString().padStart(2, '0');
+            document.getElementById("clock").innerText = `${hours}:${minutes}`;
+        }
+
+        setInterval(updateClock, 1000);
+        updateClock();
         updateUI();
         updateToyUI();
     </script>
