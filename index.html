@@ -8,62 +8,88 @@
         /* Grundlegende CSS-Styles */
         body {
             font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-        .container {
             display: flex;
-            height: 100vh;
-            flex-direction: row;
             justify-content: space-between;
+            height: 100vh;
+            margin: 0;
+            background-color: #d3f9d8; /* Grün */
         }
-        .program {
-            flex: 1;
+        .left, .right {
+            width: 48%;
+            padding: 10px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+        .left {
+            background-color: #e0f7e6;
+        }
+        .right {
             display: flex;
             flex-direction: column;
+            justify-content: space-between;
+            background-color: #e0f7e6;
+        }
+        .top, .bottom {
+            flex: 1;
+        }
+        #tagesablauf {
+            height: 100%;
+            display: flex;
             justify-content: center;
             align-items: center;
-            height: 100%;
-            border: 1px solid black;
         }
-        #tagesablauf, #spielzeug-ausleihe {
-            flex: 1;
-            width: 100%;
-        }
-        #tagesablauf img {
-            width: 100%;
-            height: auto;
-        }
-        #digitaluhr {
-            font-size: 30px;
-            font-weight: bold;
+        #digitalClock {
+            font-size: 20px;
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
             color: black;
+        }
+        .button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Linkes Programm bleibt unverändert -->
-        <div class="program">
-            <h1>Programm 1: Punkte</h1>
-            <!-- Dein Programm 1 Code hier, bleibt unverändert -->
+
+    <div class="left">
+        <!-- Hier kommt das Punktesystem (Programm 1) -->
+        <h2>Credit System</h2>
+        <div id="punkteListe">
+            <!-- Dynamisch generierte Namen und Punkte -->
         </div>
-        
-        <!-- Rechtes Programm mit tagesablauf und Spielzeugausleihe -->
-        <div class="program">
-            <h1>Programm 3: Tagesablauf und Spielzeug Ausleihe</h1>
+        <button class="button" onclick="resetAll()">Alle auf 0 setzen</button>
+    </div>
+
+    <div class="right">
+        <div class="top">
+            <!-- Hier kommt das Tagesablaufprogramm (Programm 2 mit Bildern) -->
             <div id="tagesablauf">
-                <img id="day-image" src="files/freizeit.png" alt="Tagesbild">
+                <img id="tagesbild" src="freizeit.png" alt="Tagesbild" width="100%" height="100%">
             </div>
-            <div id="digitaluhr"></div>
-            <div id="spielzeug-ausleihe">
-                <!-- Spielzeugausleihe Code bleibt unverändert -->
+        </div>
+
+        <div class="bottom">
+            <!-- Hier kommt die Spielzeug Ausleihe (Programm 3) -->
+            <h2>Spielzeug Ausleihe</h2>
+            <div id="ausleiheListe">
+                <!-- Dynamisch generierte Ausleihe -->
             </div>
         </div>
     </div>
 
+    <div id="digitalClock"></div>
+
     <script>
-        const tagImages = {
+        // Tagesablauf-Bilder für verschiedene Wochentage und Uhrzeiten
+        const tagesBilder = {
             "Montag": {
                 "08:00-13:15": "freizeit.png",
                 "13:16-13:20": "vorbereitenessen.png",
@@ -88,45 +114,58 @@
                 "16:03-16:20": "freizeit.png",
                 "16:21-16:40": "abdi3.png"
             },
-            // Füge hier die anderen Tage hinzu (Mittwoch, Donnerstag, Freitag) nach dem gleichen Muster...
+            // Füge die anderen Wochentage ähnlich hinzu
         };
 
-        function updateTagesbild() {
-            const today = new Date();
-            const dayOfWeek = today.getDay();  // 0 = Sonntag, 1 = Montag, ..., 6 = Samstag
-            const currentDay = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"][dayOfWeek];
-            const currentTime = today.getHours() + ":" + ("0" + today.getMinutes()).slice(-2);
-            
-            // Standardbild (freizeit) anzeigen, wenn keine Zeit passt
-            let imageFile = "files/freizeit.png";
+        const defaultImage = "freizeit.png";  // Standardbild für alle nicht definierten Zeiten
+        let currentDay = new Date().toLocaleString("de-DE", { weekday: "long" });
+        let currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-            // Prüfen, ob es für den aktuellen Tag und die Uhrzeit ein Bild gibt
-            const daySchedule = tagImages[currentDay];
-            for (const timeSlot in daySchedule) {
-                if (currentTime >= timeSlot.split("-")[0] && currentTime <= timeSlot.split("-")[1]) {
-                    imageFile = "files/" + daySchedule[timeSlot];
-                    break;
+        // Funktion zum Wechseln des Bildes basierend auf dem Tag und der Zeit
+        function updateTagesbild() {
+            let imageToShow = defaultImage;
+            if (tagesBilder[currentDay]) {
+                for (let timeRange in tagesBilder[currentDay]) {
+                    let [startTime, endTime] = timeRange.split("-");
+                    if (isInTimeRange(currentTime, startTime, endTime)) {
+                        imageToShow = tagesBilder[currentDay][timeRange];
+                        break;
+                    }
                 }
             }
-
-            document.getElementById("day-image").src = imageFile;
+            document.getElementById("tagesbild").src = imageToShow;
         }
 
+        // Überprüft, ob die aktuelle Zeit in dem gegebenen Zeitraum liegt
+        function isInTimeRange(currentTime, startTime, endTime) {
+            let currentTimeInMinutes = convertToMinutes(currentTime);
+            return currentTimeInMinutes >= convertToMinutes(startTime) && currentTimeInMinutes <= convertToMinutes(endTime);
+        }
+
+        // Funktion zur Umwandlung der Uhrzeit in Minuten
+        function convertToMinutes(timeStr) {
+            let [hour, minute] = timeStr.split(":").map(Number);
+            return hour * 60 + minute;
+        }
+
+        // Update der Digitaluhr
         function updateDigitalClock() {
-            const today = new Date();
-            const hours = today.getHours().toString().padStart(2, '0');
-            const minutes = today.getMinutes().toString().padStart(2, '0');
-            const seconds = today.getSeconds().toString().padStart(2, '0');
-            document.getElementById("digitaluhr").textContent = `${hours}:${minutes}:${seconds}`;
+            let now = new Date();
+            let hours = now.getHours().toString().padStart(2, "0");
+            let minutes = now.getMinutes().toString().padStart(2, "0");
+            document.getElementById("digitalClock").textContent = `${hours}:${minutes}`;
         }
 
-        // Bild alle 60 Sekunden aktualisieren
-        setInterval(updateTagesbild, 60000); // Alle 1 Minute (60 Sekunden)
-        updateTagesbild();  // Initiales Update sofort beim Laden der Seite
+        // Aktualisiert das Tagesbild und die Uhrzeit jede Minute
+        setInterval(() => {
+            updateTagesbild();
+            updateDigitalClock();
+        }, 60000); // alle 60 Sekunden
 
-        // Digitaluhr alle Sekunde aktualisieren
-        setInterval(updateDigitalClock, 1000); // Alle 1 Sekunde
-        updateDigitalClock();  // Initiales Update sofort beim Laden der Seite
+        // Setzt das Tagesbild beim Laden der Seite
+        updateTagesbild();
+        updateDigitalClock();
     </script>
+
 </body>
 </html>
