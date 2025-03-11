@@ -30,12 +30,6 @@
             color: white;
         }
 
-        .button-container {
-            display: flex;
-            gap: 10px; /* Abstand zwischen Buttons */
-            margin-bottom: 15px;
-        }
-
         .credits-list {
             display: flex;
             flex-wrap: wrap;
@@ -50,18 +44,48 @@
             cursor: pointer;
             width: 180px;
             text-align: center;
-            font-size: 24px; /* Größer für bessere Lesbarkeit */
+            font-size: 24px;
             font-weight: bold;
             color: white;
             border-radius: 10px;
         }
 
-        /* Rechte Seite */
+        .popup {
+            display: none;
+            position: absolute;
+            background: white;
+            padding: 10px;
+            border: 2px solid black;
+            z-index: 1000;
+        }
+
+        .popup button {
+            margin: 5px;
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        .close-popup {
+            float: right;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .button-container {
+            margin-top: 10px;
+        }
+
+        .button-container button {
+            padding: 10px;
+            margin: 5px;
+            cursor: pointer;
+        }
+
+        /* Rechte Seite - Nur Spielzeug-Ausleihe */
         .right-container {
             flex: 1;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
             padding: 20px;
         }
 
@@ -71,9 +95,10 @@
             flex-wrap: wrap;
             background-color: #006400;
             padding: 10px;
-            margin-bottom: 10px;
-            height: 50%;
+            align-content: flex-start;
             justify-content: flex-start;
+            height: 100%;
+            overflow: hidden;
         }
 
         .toy-box {
@@ -81,70 +106,12 @@
             padding: 15px;
             background: lightgray;
             color: black;
-            width: calc(16.66% - 10px); /* 6 Spalten, minus Abstand */
+            width: calc(16.66% - 10px);
             text-align: center;
             font-size: 18px;
             border-radius: 10px;
-        }
-
-        .borrowed {
-            color: red;
-            font-weight: bold;
-        }
-
-        /* Tagesablauf */
-        .schedule-container {
-            height: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: none; /* Kein brauner Hintergrund */
-        }
-
-        #tagesbild {
-            width: 90%; /* Etwas größer */
-            height: auto;
-            border-radius: 10px;
-        }
-
-        /* Digitale Uhr */
-        .clock {
-            position: absolute;
-            bottom: 10px;
-            right: 20px;
-            font-size: 28px;
-            color: black;
-            font-weight: bold;
-            background: rgba(255, 255, 255, 0.7);
-            padding: 5px 10px;
-            border-radius: 5px;
-        }
-
-        /* Popup */
-        .popup {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            color: black;
-            padding: 20px;
-            display: none;
-            border-radius: 10px;
-            text-align: center;
-        }
-
-        .popup button {
-            margin: 5px;
-            padding: 10px;
-        }
-
-        .popup-close {
-            background: red;
-            color: white;
             cursor: pointer;
         }
-
     </style>
 </head>
 <body>
@@ -154,37 +121,23 @@
         <div class="left-container">
             <h1>Credit-System</h1>
             <div class="button-container">
-                <button onclick="changeAllCredits(1)">Allen +1</button>
-                <button onclick="changeAllCredits(-1)">Allen -1</button>
-                <button onclick="confirmReset()">Alle zurücksetzen</button>
+                <button onclick="allPlusOne()">Alle +1</button>
+                <button onclick="allMinusOne()">Alle -1</button>
             </div>
             <div id="credits" class="credits-list"></div>
         </div>
 
-        <!-- Rechte Seite -->
+        <!-- Rechte Seite - Nur Spielzeug-Ausleihe -->
         <div class="right-container">
-
-            <!-- Spielzeug-Ausleihe -->
-            <div class="toy-container">
-                <h1>Spielzeug-Ausleihe</h1>
-                <div id="toys" class="toy-list"></div>
-            </div>
-
-            <!-- Tagesablauf -->
-            <div class="schedule-container">
-                <img id="tagesbild" src="freizeit.png" alt="Tagesbild">
-                <div class="clock" id="clock"></div>
-            </div>
-
+            <div class="toy-container" id="toys"></div>
         </div>
     </div>
 
-    <!-- Popup für Punktevergabe -->
     <div id="popup" class="popup">
-        <h2 id="popup-name"></h2>
-        <button onclick="updateCredit(1)">+1</button>
-        <button onclick="updateCredit(-1)">-1</button>
-        <button class="popup-close" onclick="closePopup()">X</button>
+        <span class="close-popup" onclick="closePopup()">X</span>
+        <p id="popup-text"></p>
+        <button onclick="adjustCredit(1)">+1</button>
+        <button onclick="adjustCredit(-1)">-1</button>
     </div>
 
     <script>
@@ -193,52 +146,51 @@
             "Emilia", "Oskar", "Lotte", "David", "Max", "Ronja", "Romy", "Sophie", "Artur", "Zehra",
             "Ismail", "Malick", "Nela", "Mia", "Jayden"
         ];
+        
+        let credits = {};
+        let popup = document.getElementById("popup");
+        let selectedStudent = "";
 
-        let credits = JSON.parse(localStorage.getItem("credits")) || {};
-        students.forEach(name => { if (!(name in credits)) credits[name] = 0; });
+        students.forEach(name => credits[name] = 0);
 
-        let selectedStudent = null;
-
-        function saveCredits() {
-            localStorage.setItem("credits", JSON.stringify(credits));
-        }
-
-        function updateUI() {
+        function updateCreditsUI() {
             let creditsDiv = document.getElementById("credits");
             creditsDiv.innerHTML = "";
             students.forEach(name => {
                 let box = document.createElement("div");
                 box.classList.add("name-box");
                 box.innerText = `${name}: ${credits[name]}`;
-                box.onclick = () => openPopup(name);
+                box.onclick = () => showPopup(name);
                 creditsDiv.appendChild(box);
             });
         }
 
-        function openPopup(name) {
+        function showPopup(name) {
             selectedStudent = name;
-            document.getElementById("popup-name").innerText = `${name}: ${credits[name]}`;
-            document.getElementById("popup").style.display = "block";
+            document.getElementById("popup-text").innerText = `Punkte für ${name}`;
+            popup.style.display = "block";
         }
 
         function closePopup() {
-            document.getElementById("popup").style.display = "none";
+            popup.style.display = "none";
         }
 
-        function updateCredit(amount) {
+        function adjustCredit(amount) {
             if (selectedStudent) {
                 credits[selectedStudent] += amount;
-                saveCredits();
-                updateUI();
-                openPopup(selectedStudent);
+                updateCreditsUI();
             }
         }
 
-        function updateClock() {
-            document.getElementById("clock").innerText = new Date().toLocaleTimeString();
+        function allPlusOne() {
+            students.forEach(name => credits[name] += 1);
+            updateCreditsUI();
         }
-        setInterval(updateClock, 1000);
-        updateClock();
+
+        function allMinusOne() {
+            students.forEach(name => credits[name] -= 1);
+            updateCreditsUI();
+        }
 
         function updateToyUI() {
             let toyDiv = document.getElementById("toys");
@@ -247,11 +199,12 @@
                 let box = document.createElement("div");
                 box.classList.add("toy-box");
                 box.innerText = name;
+                box.onclick = () => alert(name + " hat ein Spielzeug!");
                 toyDiv.appendChild(box);
             });
         }
 
-        updateUI();
+        updateCreditsUI();
         updateToyUI();
     </script>
 
