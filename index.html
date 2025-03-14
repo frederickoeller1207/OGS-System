@@ -52,7 +52,7 @@
         ];
 
         let credits = JSON.parse(localStorage.getItem("credits")) || {};
-        students.forEach(name => { if (!(name in credits)) credits[name] = 0; });
+        students.forEach(name => { if (!credits[name]) credits[name] = { credits: 0, auszahlungen: [] }; });
 
         let selectedStudent = null;
 
@@ -66,7 +66,7 @@
             students.forEach(name => {
                 let box = document.createElement("div");
                 box.classList.add("name-box");
-                box.innerText = `${name}: ${credits[name]} Credits`;
+                box.innerText = `${name}: ${credits[name].credits} Credits`;
                 box.onclick = () => openPopup(name);
                 creditsDiv.appendChild(box);
             });
@@ -75,7 +75,7 @@
 
         function openPopup(name) {
             selectedStudent = name;
-            document.getElementById("popup-name").innerText = `${name}: ${credits[name]} Credits`;
+            document.getElementById("popup-name").innerText = `${name}: ${credits[name].credits} Credits`;
             document.getElementById("popup").style.display = "block";
         }
 
@@ -85,7 +85,7 @@
 
         function updateCredit(amount) {
             if (selectedStudent) {
-                credits[selectedStudent] += amount;
+                credits[selectedStudent].credits += amount;
                 saveCredits();
                 updateUI();
                 openPopup(selectedStudent);
@@ -93,7 +93,7 @@
         }
 
         function changeAllCredits(amount) {
-            students.forEach(name => credits[name] += amount);
+            students.forEach(name => credits[name].credits += amount);
             saveCredits();
             updateUI();
         }
@@ -101,14 +101,13 @@
         function confirmReset() {
             if (confirm("Bist du sicher, dass du alle Credits zurücksetzen möchtest?")) {
                 if (confirm("Wirklich alle Credits zurücksetzen?")) {
-                    students.forEach(name => credits[name] = 0);
+                    students.forEach(name => credits[name].credits = 0);
                     saveCredits();
                     updateUI();
                 }
             }
         }
 
-        // Spielzeug-Ausleihe
         let toyData = JSON.parse(localStorage.getItem("toyData")) || {};
 
         function updateToyUI() {
@@ -158,18 +157,14 @@
             location.reload();
         }, 300000);
 
-        // Auszahlungsfunktion
         function auszahlen() {
             if (selectedStudent) {
                 let betrag = prompt("Auszahlungsbetrag (M$):");
                 if (betrag !== null && !isNaN(betrag)) {
                     betrag = parseInt(betrag);
-                    if (credits[selectedStudent] >= betrag) {
-                        credits[selectedStudent] -= betrag;
-                        if (!credits[selectedStudent + "_auszahlungen"]) {
-                            credits[selectedStudent + "_auszahlungen"] = [];
-                        }
-                        credits[selectedStudent + "_auszahlungen"].push({
+                    if (credits[selectedStudent].credits >= betrag) {
+                        credits[selectedStudent].credits -= betrag;
+                        credits[selectedStudent].auszahlungen.push({
                             betrag: betrag,
                             datum: new Date().toLocaleDateString(),
                         });
@@ -187,10 +182,13 @@
             let auszahlungsbereich = document.getElementById("auszahlungen");
             auszahlungsbereich.innerHTML = "";
             students.forEach(name => {
-                if (credits[name + "_auszahlungen"] && credits[name + "_auszahlungen"].length > 0) {
+                if (credits[name].auszahlungen && credits[name].auszahlungen.length > 0) {
                     let gesamtAuszahlung = 0;
-                    credits[name + "_auszahlungen"].forEach(auszahlung => {
+                    credits[name].auszahlungen.forEach(auszahlung => {
                         gesamtAuszahlung += auszahlung.betrag;
                     });
                     let eintrag = document.createElement("p");
                     eintrag.textContent = `${name}: Gesamt ausgezahlt ${gesamtAuszahlung} M$`;
+                    auszahlungsbereich.appendChild(eintrag);
+                }
+            });
