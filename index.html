@@ -14,33 +14,33 @@
         .popup-close { background: red; color: white; cursor: pointer; }
         .toy-list { display: flex; flex-wrap: wrap; justify-content: center; }
         .toy-box { margin: 5px; padding: 10px; background: lightgray; color: black; }
-        .borrowed { color: red; font-weight: bold; } /* NEU: Ausgeliehene Spielzeuge werden ROT dargestellt */
+        .borrowed { color: red; font-weight: bold; }
         .clock { font-size: 40px; margin-top: 20px; }
+        #auszahlungen { text-align: left; margin-top: 20px; }
     </style>
 </head>
 <body>
 
-    <!-- Credit System -->
     <div class="container">
         <h1>Credit-System</h1>
         <button onclick="changeAllCredits(1)">Allen +1</button>
         <button onclick="changeAllCredits(-1)">Allen -1</button>
         <button onclick="confirmReset()">Alle zurücksetzen</button>
         <div id="credits" class="credits-list"></div>
+        <div id="auszahlungen"></div>
     </div>
 
-    <!-- Spielzeug-Ausleihe -->
     <div class="container">
         <h1>Spielzeug-Ausleihe</h1>
         <div id="toys" class="toy-list"></div>
-        <div id="clock" class="clock"></div> <!-- Uhr hinzufügen -->
+        <div id="clock" class="clock"></div>
     </div>
 
-    <!-- Popup für Punktevergabe -->
     <div id="popup" class="popup">
         <h2 id="popup-name"></h2>
         <button onclick="updateCredit(1)">+1</button>
         <button onclick="updateCredit(-1)">-1</button>
+        <button onclick="auszahlen()">Auszahlen</button>
         <button class="popup-close" onclick="closePopup()">X</button>
     </div>
 
@@ -70,6 +70,7 @@
                 box.onclick = () => openPopup(name);
                 creditsDiv.appendChild(box);
             });
+            anzeigeAuszahlungen();
         }
 
         function openPopup(name) {
@@ -117,7 +118,7 @@
                 let box = document.createElement("div");
                 box.classList.add("toy-box");
                 if (toyData[name]) {
-                    box.classList.add("borrowed"); // Name wird rot, wenn ausgeliehen
+                    box.classList.add("borrowed");
                     box.innerText = `${name} hat ausgeliehen: ${toyData[name]}`;
                 } else {
                     box.innerText = name;
@@ -151,13 +152,45 @@
         updateUI();
         updateToyUI();
         updateClock();
-        setInterval(updateClock, 5000); // Aktualisiert die Uhr alle 5 Sekunden
+        setInterval(updateClock, 5000);
 
-        // Auto-Refresh alle 5 Minuten
         setInterval(function() {
             location.reload();
-        }, 300000);  // 300000 ms = 5 Minuten
-    </script>
+        }, 300000);
 
-</body>
-</html>
+        // Auszahlungsfunktion
+        function auszahlen() {
+            if (selectedStudent) {
+                let betrag = prompt("Auszahlungsbetrag (M$):");
+                if (betrag !== null && !isNaN(betrag)) {
+                    betrag = parseInt(betrag);
+                    if (credits[selectedStudent] >= betrag) {
+                        credits[selectedStudent] -= betrag;
+                        if (!credits[selectedStudent + "_auszahlungen"]) {
+                            credits[selectedStudent + "_auszahlungen"] = [];
+                        }
+                        credits[selectedStudent + "_auszahlungen"].push({
+                            betrag: betrag,
+                            datum: new Date().toLocaleDateString(),
+                        });
+                        saveCredits();
+                        updateUI();
+                        openPopup(selectedStudent);
+                    } else {
+                        alert("Nicht genügend Guthaben!");
+                    }
+                }
+            }
+        }
+
+        function anzeigeAuszahlungen() {
+            let auszahlungsbereich = document.getElementById("auszahlungen");
+            auszahlungsbereich.innerHTML = "";
+            students.forEach(name => {
+                if (credits[name + "_auszahlungen"] && credits[name + "_auszahlungen"].length > 0) {
+                    let gesamtAuszahlung = 0;
+                    credits[name + "_auszahlungen"].forEach(auszahlung => {
+                        gesamtAuszahlung += auszahlung.betrag;
+                    });
+                    let eintrag = document.createElement("p");
+                    eintrag.textContent = `${name}: Gesamt ausgezahlt ${gesamtAuszahlung} M$`;
