@@ -15,6 +15,7 @@
         .toy-list { display: flex; flex-wrap: wrap; justify-content: center; }
         .toy-box { margin: 5px; padding: 10px; background: lightgray; color: black; }
         .borrowed { color: red; font-weight: bold; } /* NEU: Ausgeliehene Spielzeuge werden ROT dargestellt */
+        .clock { font-size: 40px; margin-top: 20px; }
     </style>
 </head>
 <body>
@@ -32,6 +33,7 @@
     <div class="container">
         <h1>Spielzeug-Ausleihe</h1>
         <div id="toys" class="toy-list"></div>
+        <div id="clock" class="clock"></div> <!-- Uhr hinzufügen -->
     </div>
 
     <!-- Popup für Punktevergabe -->
@@ -138,8 +140,18 @@
             }
         }
 
+        function updateClock() {
+            let now = new Date();
+            let hours = now.getHours().toString().padStart(2, '0');
+            let minutes = now.getMinutes().toString().padStart(2, '0');
+            let timeString = `${hours}:${minutes}`;
+            document.getElementById("clock").innerText = timeString;
+        }
+
         updateUI();
         updateToyUI();
+        updateClock();
+        setInterval(updateClock, 5000); // Aktualisiert die Uhr alle 5 Sekunden
 
         // Auto-Refresh alle 5 Minuten
         setInterval(function() {
