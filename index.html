@@ -14,33 +14,33 @@
         .popup-close { background: red; color: white; cursor: pointer; }
         .toy-list { display: flex; flex-wrap: wrap; justify-content: center; }
         .toy-box { margin: 5px; padding: 10px; background: lightgray; color: black; }
-        .borrowed { color: red; font-weight: bold; }
+        .borrowed { color: red; font-weight: bold; } /* NEU: Ausgeliehene Spielzeuge werden ROT dargestellt */
         .clock { font-size: 40px; margin-top: 20px; }
-        #auszahlungen { text-align: left; margin-top: 20px; }
     </style>
 </head>
 <body>
 
+    <!-- Credit System -->
     <div class="container">
         <h1>Credit-System</h1>
         <button onclick="changeAllCredits(1)">Allen +1</button>
         <button onclick="changeAllCredits(-1)">Allen -1</button>
         <button onclick="confirmReset()">Alle zurücksetzen</button>
         <div id="credits" class="credits-list"></div>
-        <div id="auszahlungen"></div>
     </div>
 
+    <!-- Spielzeug-Ausleihe -->
     <div class="container">
         <h1>Spielzeug-Ausleihe</h1>
         <div id="toys" class="toy-list"></div>
-        <div id="clock" class="clock"></div>
+        <div id="clock" class="clock"></div> <!-- Uhr hinzufügen -->
     </div>
 
+    <!-- Popup für Punktevergabe -->
     <div id="popup" class="popup">
         <h2 id="popup-name"></h2>
         <button onclick="updateCredit(1)">+1</button>
         <button onclick="updateCredit(-1)">-1</button>
-        <button onclick="auszahlen()">Auszahlen</button>
         <button class="popup-close" onclick="closePopup()">X</button>
     </div>
 
@@ -52,7 +52,7 @@
         ];
 
         let credits = JSON.parse(localStorage.getItem("credits")) || {};
-        students.forEach(name => { if (!credits[name]) credits[name] = { credits: 0, auszahlungen: [] }; });
+        students.forEach(name => { if (!(name in credits)) credits[name] = 0; });
 
         let selectedStudent = null;
 
@@ -66,16 +66,15 @@
             students.forEach(name => {
                 let box = document.createElement("div");
                 box.classList.add("name-box");
-                box.innerText = `${name}: ${credits[name].credits} Credits`;
+                box.innerText = `${name}: ${credits[name]} Credits`;
                 box.onclick = () => openPopup(name);
                 creditsDiv.appendChild(box);
             });
-            anzeigeAuszahlungen();
         }
 
         function openPopup(name) {
             selectedStudent = name;
-            document.getElementById("popup-name").innerText = `${name}: ${credits[name].credits} Credits`;
+            document.getElementById("popup-name").innerText = `${name}: ${credits[name]} Credits`;
             document.getElementById("popup").style.display = "block";
         }
 
@@ -85,7 +84,7 @@
 
         function updateCredit(amount) {
             if (selectedStudent) {
-                credits[selectedStudent].credits += amount;
+                credits[selectedStudent] += amount;
                 saveCredits();
                 updateUI();
                 openPopup(selectedStudent);
@@ -93,7 +92,7 @@
         }
 
         function changeAllCredits(amount) {
-            students.forEach(name => credits[name].credits += amount);
+            students.forEach(name => credits[name] += amount);
             saveCredits();
             updateUI();
         }
@@ -101,13 +100,14 @@
         function confirmReset() {
             if (confirm("Bist du sicher, dass du alle Credits zurücksetzen möchtest?")) {
                 if (confirm("Wirklich alle Credits zurücksetzen?")) {
-                    students.forEach(name => credits[name].credits = 0);
+                    students.forEach(name => credits[name] = 0);
                     saveCredits();
                     updateUI();
                 }
             }
         }
 
+        // Spielzeug-Ausleihe
         let toyData = JSON.parse(localStorage.getItem("toyData")) || {};
 
         function updateToyUI() {
@@ -117,7 +117,7 @@
                 let box = document.createElement("div");
                 box.classList.add("toy-box");
                 if (toyData[name]) {
-                    box.classList.add("borrowed");
+                    box.classList.add("borrowed"); // Name wird rot, wenn ausgeliehen
                     box.innerText = `${name} hat ausgeliehen: ${toyData[name]}`;
                 } else {
                     box.innerText = name;
@@ -151,44 +151,13 @@
         updateUI();
         updateToyUI();
         updateClock();
-        setInterval(updateClock, 5000);
+        setInterval(updateClock, 5000); // Aktualisiert die Uhr alle 5 Sekunden
 
+        // Auto-Refresh alle 5 Minuten
         setInterval(function() {
             location.reload();
-        }, 300000);
+        }, 300000);  // 300000 ms = 5 Minuten
+    </script>
 
-        function auszahlen() {
-            if (selectedStudent) {
-                let betrag = prompt("Auszahlungsbetrag (M$):");
-                if (betrag !== null && !isNaN(betrag)) {
-                    betrag = parseInt(betrag);
-                    if (credits[selectedStudent].credits >= betrag) {
-                        credits[selectedStudent].credits -= betrag;
-                        credits[selectedStudent].auszahlungen.push({
-                            betrag: betrag,
-                            datum: new Date().toLocaleDateString(),
-                        });
-                        saveCredits();
-                        updateUI();
-                        openPopup(selectedStudent);
-                    } else {
-                        alert("Nicht genügend Guthaben!");
-                    }
-                }
-            }
-        }
-
-        function anzeigeAuszahlungen() {
-            let auszahlungsbereich = document.getElementById("auszahlungen");
-            auszahlungsbereich.innerHTML = "";
-            students.forEach(name => {
-                if (credits[name].auszahlungen && credits[name].auszahlungen.length > 0) {
-                    let gesamtAuszahlung = 0;
-                    credits[name].auszahlungen.forEach(auszahlung => {
-                        gesamtAuszahlung += auszahlung.betrag;
-                    });
-                    let eintrag = document.createElement("p");
-                    eintrag.textContent = `${name}: Gesamt ausgezahlt ${gesamtAuszahlung} M$`;
-                    auszahlungsbereich.appendChild(eintrag);
-                }
-            });
+</body>
+</html>
