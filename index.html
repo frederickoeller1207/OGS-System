@@ -232,10 +232,20 @@
             let day = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"][now.getDay()];
             let time = now.getHours() * 60 + now.getMinutes();
             let schedule = {
-                /* Dein Zeitplan hier */
+                "Montag": [
+                    { start: 0, end: 480, image: "freizeit.png" },
+                    { start: 481, end: 485, image: "vorbereitenessen.png" },
+                    { start: 486, end: 515, image: "essen.png" },
+                    // weitere Zeiträume für Montag...
+                ],
+                "Dienstag": [
+                    { start: 0, end: 480, image: "freizeit.png" },
+                    // weitere Zeiträume für Dienstag...
+                ],
+                // Weitere Tage und Zeiträume hinzufügen...
             };
             let imageSrc = schedule[day]?.find(entry => time >= entry.start && time <= entry.end)?.image || "default.png";
-            document.getElementById("image").src = imageSrc;
+            document.getElementById("image").src = `./files/${imageSrc}`;
         }
 
         updateUI();
