@@ -140,6 +140,11 @@
 
         updateUI();
         updateToyUI();
+
+        // Auto-Refresh alle 5 Minuten
+        setInterval(function() {
+            location.reload();
+        }, 300000);  // 300000 ms = 5 Minuten
     </script>
 
 </body>
