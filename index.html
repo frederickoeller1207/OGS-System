@@ -3,96 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Credit-System & Spielzeug-Ausleihe & Stundenplan</title>
+    <title>Credit-System & Spielzeug-Ausleihe</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background-color: green;
-            color: white;
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-        }
-        .container {
-            flex: 1;
-            padding: 10px;
-            border-right: 2px solid white;
-        }
-        .credits-list {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-        .name-box {
-            margin: 5px;
-            padding: 10px;
-            background: gray;
-            cursor: pointer;
-        }
-        .popup {
-            position: fixed;
-            top: 50%;
-            left: 25%; /* Verschoben, damit es nicht hinter dem Bild liegt */
-            transform: translate(-50%, -50%);
-            background: white;
-            color: black;
-            padding: 20px;
-            display: none;
-            border-radius: 10px;
-            z-index: 10;
-        }
-        .popup button {
-            margin: 5px;
-            padding: 10px;
-        }
-        .popup-close {
-            background: red;
-            color: white;
-            cursor: pointer;
-        }
-        .toy-list {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-        .toy-box {
-            margin: 5px;
-            padding: 10px;
-            background: lightgray;
-            color: black;
-        }
-        .borrowed {
-            color: red;
-            font-weight: bold;
-        }
-        #stundenplan-container {
-            position: absolute;
-            right: 0;
-            bottom: 0;
-            width: 50%;
-            height: 50%;
-            background-color: black;
-        }
-        #stundenplan-image {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        #digital-clock {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            font-size: 36px;
-            font-weight: bold;
-            color: white;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 10px 20px;
-            border-radius: 10px;
-        }
+        body { font-family: Arial, sans-serif; text-align: center; background-color: green; color: white; display: flex; height: 100vh; }
+        .container { flex: 1; padding: 10px; border-right: 2px solid white; }
+        .credits-list { display: flex; flex-wrap: wrap; justify-content: center; }
+        .name-box { margin: 5px; padding: 10px; background: gray; cursor: pointer; }
+        .popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; color: black; padding: 20px; display: none; border-radius: 10px; }
+        .popup button { margin: 5px; padding: 10px; }
+        .popup-close { background: red; color: white; cursor: pointer; }
+        .toy-list { display: flex; flex-wrap: wrap; justify-content: center; }
+        .toy-box { margin: 5px; padding: 10px; background: lightgray; color: black; }
+        .borrowed { color: red; font-weight: bold; } /* NEU: Ausgeliehene Spielzeuge werden ROT dargestellt */
     </style>
 </head>
-<body onload="updateClock(); updateImage(); setInterval(updateClock, 1000); setInterval(updateImage, 60000);">
+<body>
 
     <!-- Credit System -->
     <div class="container">
@@ -109,12 +34,6 @@
         <div id="toys" class="toy-list"></div>
     </div>
 
-    <!-- Stundenplan -->
-    <div id="stundenplan-container">
-        <img id="stundenplan-image" src="files/freizeit.png" alt="Stundenplan">
-        <div id="digital-clock"></div>
-    </div>
-
     <!-- Popup für Punktevergabe -->
     <div id="popup" class="popup">
         <h2 id="popup-name"></h2>
@@ -124,10 +43,12 @@
     </div>
 
     <script>
-        let students = ["Liam", "Irem", "Malin", "Leni", "Frida G.", "Lukas", "Niklas", "Frida R.", "Matthias", "Greta",
-                        "Emilia", "Oskar", "Lotte", "David", "Max", "Ronja", "Romy", "Sophie", "Artur", "Zehra",
-                        "Ismail", "Malick", "Nela", "Mia", "Jayden"];
-        
+        let students = [
+            "Liam", "Irem", "Malin", "Leni", "Frida G.", "Lukas", "Niklas", "Frida R.", "Matthias", "Greta",
+            "Emilia", "Oskar", "Lotte", "David", "Max", "Ronja", "Romy", "Sophie", "Artur", "Zehra",
+            "Ismail", "Malick", "Nela", "Mia", "Jayden"
+        ];
+
         let credits = JSON.parse(localStorage.getItem("credits")) || {};
         students.forEach(name => { if (!(name in credits)) credits[name] = 0; });
 
@@ -176,12 +97,15 @@
 
         function confirmReset() {
             if (confirm("Bist du sicher, dass du alle Credits zurücksetzen möchtest?")) {
-                students.forEach(name => credits[name] = 0);
-                saveCredits();
-                updateUI();
+                if (confirm("Wirklich alle Credits zurücksetzen?")) {
+                    students.forEach(name => credits[name] = 0);
+                    saveCredits();
+                    updateUI();
+                }
             }
         }
 
+        // Spielzeug-Ausleihe
         let toyData = JSON.parse(localStorage.getItem("toyData")) || {};
 
         function updateToyUI() {
@@ -191,7 +115,7 @@
                 let box = document.createElement("div");
                 box.classList.add("toy-box");
                 if (toyData[name]) {
-                    box.classList.add("borrowed");
+                    box.classList.add("borrowed"); // Name wird rot, wenn ausgeliehen
                     box.innerText = `${name} hat ausgeliehen: ${toyData[name]}`;
                 } else {
                     box.innerText = name;
@@ -212,25 +136,6 @@
                 localStorage.setItem("toyData", JSON.stringify(toyData));
                 updateToyUI();
             }
-        }
-
-        function updateClock() {
-            let now = new Date();
-            document.getElementById("digital-clock").innerText = now.toLocaleTimeString();
-        }
-
-        function updateImage() {
-            let images = {
-                "08:00": "freizeit.png", 
-                "13:16": "vorbereitenessen.png",
-                "13:21": "essen.png"
-                // Ergänze die restlichen Uhrzeiten hier
-            };
-
-            let now = new Date();
-            let currentTime = now.getHours() + ":" + String(now.getMinutes()).padStart(2, "0");
-
-            document.getElementById("stundenplan-image").src = "files/" + (images[currentTime] || "freizeit.png");
         }
 
         updateUI();
