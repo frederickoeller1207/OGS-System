@@ -3,66 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Credit-System, Spielzeug-Ausleihe & Stundenplan</title>
+    <title>Credit-System & Spielzeug-Ausleihe & Stundenplan</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
         body {
             font-family: Arial, sans-serif;
-            display: flex;
-            height: 100vh;
+            text-align: center;
             background-color: green;
             color: white;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
         }
         .container {
             flex: 1;
             padding: 10px;
             border-right: 2px solid white;
-            overflow-y: auto;
         }
-        #right-container {
-            display: flex;
-            flex-direction: column;
-            flex: 1;
-        }
-        #top-right {
-            flex: 1;
-            padding: 10px;
-            overflow-y: auto;
-        }
-        #bottom-right {
-            flex: 1;
-            position: relative;
-        }
-        .credits-list, .toy-list {
+        .credits-list {
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
         }
-        .name-box, .toy-box {
+        .name-box {
             margin: 5px;
             padding: 10px;
             background: gray;
             cursor: pointer;
         }
-        .borrowed {
-            color: red;
-            font-weight: bold;
-        }
         .popup {
             position: fixed;
             top: 50%;
-            left: 40%; /* Nach links verschoben */
+            left: 25%; /* Verschoben, damit es nicht hinter dem Bild liegt */
             transform: translate(-50%, -50%);
             background: white;
             color: black;
             padding: 20px;
             display: none;
             border-radius: 10px;
-            z-index: 10; /* Damit es über dem Bild liegt */
+            z-index: 10;
         }
         .popup button {
             margin: 5px;
@@ -73,14 +51,33 @@
             color: white;
             cursor: pointer;
         }
-        #image {
+        .toy-list {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .toy-box {
+            margin: 5px;
+            padding: 10px;
+            background: lightgray;
+            color: black;
+        }
+        .borrowed {
+            color: red;
+            font-weight: bold;
+        }
+        #stundenplan-container {
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            width: 50%;
+            height: 50%;
+            background-color: black;
+        }
+        #stundenplan-image {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 1;
         }
         #digital-clock {
             position: absolute;
@@ -92,13 +89,12 @@
             background: rgba(0, 0, 0, 0.5);
             padding: 10px 20px;
             border-radius: 10px;
-            z-index: 2;
         }
     </style>
 </head>
-<body>
+<body onload="updateClock(); updateImage(); setInterval(updateClock, 1000); setInterval(updateImage, 60000);">
 
-    <!-- Credit System (Links) -->
+    <!-- Credit System -->
     <div class="container">
         <h1>Credit-System</h1>
         <button onclick="changeAllCredits(1)">Allen +1</button>
@@ -107,16 +103,16 @@
         <div id="credits" class="credits-list"></div>
     </div>
 
-    <!-- Rechts: Spielzeug-Ausleihe & Stundenplan -->
-    <div id="right-container">
-        <div id="top-right">
-            <h1>Spielzeug-Ausleihe</h1>
-            <div id="toys" class="toy-list"></div>
-        </div>
-        <div id="bottom-right">
-            <img id="image" src="" alt="Stundenplan-Bild">
-            <div id="digital-clock"></div>
-        </div>
+    <!-- Spielzeug-Ausleihe -->
+    <div class="container">
+        <h1>Spielzeug-Ausleihe</h1>
+        <div id="toys" class="toy-list"></div>
+    </div>
+
+    <!-- Stundenplan -->
+    <div id="stundenplan-container">
+        <img id="stundenplan-image" src="files/freizeit.png" alt="Stundenplan">
+        <div id="digital-clock"></div>
     </div>
 
     <!-- Popup für Punktevergabe -->
@@ -128,12 +124,10 @@
     </div>
 
     <script>
-        let students = [
-            "Liam", "Irem", "Malin", "Leni", "Frida G.", "Lukas", "Niklas", "Frida R.", "Matthias", "Greta",
-            "Emilia", "Oskar", "Lotte", "David", "Max", "Ronja", "Romy", "Sophie", "Artur", "Zehra",
-            "Ismail", "Malick", "Nela", "Mia", "Jayden"
-        ];
-
+        let students = ["Liam", "Irem", "Malin", "Leni", "Frida G.", "Lukas", "Niklas", "Frida R.", "Matthias", "Greta",
+                        "Emilia", "Oskar", "Lotte", "David", "Max", "Ronja", "Romy", "Sophie", "Artur", "Zehra",
+                        "Ismail", "Malick", "Nela", "Mia", "Jayden"];
+        
         let credits = JSON.parse(localStorage.getItem("credits")) || {};
         students.forEach(name => { if (!(name in credits)) credits[name] = 0; });
 
@@ -182,11 +176,9 @@
 
         function confirmReset() {
             if (confirm("Bist du sicher, dass du alle Credits zurücksetzen möchtest?")) {
-                if (confirm("Wirklich alle Credits zurücksetzen?")) {
-                    students.forEach(name => credits[name] = 0);
-                    saveCredits();
-                    updateUI();
-                }
+                students.forEach(name => credits[name] = 0);
+                saveCredits();
+                updateUI();
             }
         }
 
@@ -228,30 +220,21 @@
         }
 
         function updateImage() {
-            let now = new Date();
-            let day = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"][now.getDay()];
-            let time = now.getHours() * 60 + now.getMinutes();
-            let schedule = {
-                "Montag": [
-                    { start: 0, end: 480, image: "freizeit.png" },
-                    { start: 481, end: 485, image: "vorbereitenessen.png" },
-                    { start: 486, end: 515, image: "essen.png" },
-                    // weitere Zeiträume für Montag...
-                ],
-                "Dienstag": [
-                    { start: 0, end: 480, image: "freizeit.png" },
-                    // weitere Zeiträume für Dienstag...
-                ],
-                // Weitere Tage und Zeiträume hinzufügen...
+            let images = {
+                "08:00": "freizeit.png", 
+                "13:16": "vorbereitenessen.png",
+                "13:21": "essen.png"
+                // Ergänze die restlichen Uhrzeiten hier
             };
-            let imageSrc = schedule[day]?.find(entry => time >= entry.start && time <= entry.end)?.image || "default.png";
-            document.getElementById("image").src = `./files/${imageSrc}`;
+
+            let now = new Date();
+            let currentTime = now.getHours() + ":" + String(now.getMinutes()).padStart(2, "0");
+
+            document.getElementById("stundenplan-image").src = "files/" + (images[currentTime] || "freizeit.png");
         }
 
         updateUI();
         updateToyUI();
-        setInterval(updateClock, 1000);
-        setInterval(updateImage, 60000);
     </script>
 
 </body>
