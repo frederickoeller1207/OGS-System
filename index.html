@@ -3,44 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Credit-System & Spielzeug-Ausleihe</title>
+    <title>Mousecity Bank & Spielzeug-Ausleihe</title>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; background-color: green; color: white; display: flex; height: 100vh; }
         .container { flex: 1; padding: 10px; border-right: 2px solid white; }
-        .credits-list { display: flex; flex-wrap: wrap; justify-content: center; }
+        .m$-list { display: flex; flex-wrap: wrap; justify-content: center; }
         .name-box { margin: 5px; padding: 10px; background: gray; cursor: pointer; }
         .popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; color: black; padding: 20px; display: none; border-radius: 10px; }
         .popup button { margin: 5px; padding: 10px; }
         .popup-close { background: red; color: white; cursor: pointer; }
         .toy-list { display: flex; flex-wrap: wrap; justify-content: center; }
         .toy-box { margin: 5px; padding: 10px; background: lightgray; color: black; }
-        .borrowed { color: red; font-weight: bold; } /* NEU: Ausgeliehene Spielzeuge werden ROT dargestellt */
+        .borrowed { color: red; font-weight: bold; }
         .clock { font-size: 40px; margin-top: 20px; }
     </style>
 </head>
 <body>
 
-    <!-- Credit System -->
+    <!-- Mousecity Bank -->
     <div class="container">
-        <h1>Credit-System</h1>
-        <button onclick="changeAllCredits(1)">Allen +1</button>
-        <button onclick="changeAllCredits(-1)">Allen -1</button>
+        <h1>Mousecity Bank</h1>
+        <button onclick="changeAllM$(1)">Allen +1</button>
+        <button onclick="changeAllM$(-1)">Allen -1</button>
         <button onclick="confirmReset()">Alle zurücksetzen</button>
-        <div id="credits" class="credits-list"></div>
+        <div id="m$" class="m$-list"></div>
     </div>
 
     <!-- Spielzeug-Ausleihe -->
     <div class="container">
         <h1>Spielzeug-Ausleihe</h1>
         <div id="toys" class="toy-list"></div>
-        <div id="clock" class="clock"></div> <!-- Uhr hinzufügen -->
+        <div id="clock" class="clock"></div>
     </div>
 
     <!-- Popup für Punktevergabe -->
     <div id="popup" class="popup">
         <h2 id="popup-name"></h2>
-        <button onclick="updateCredit(1)">+1</button>
-        <button onclick="updateCredit(-1)">-1</button>
+        <button onclick="updateM$(1)">+1</button>
+        <button onclick="updateM$(-1)">-1</button>
         <button class="popup-close" onclick="closePopup()">X</button>
     </div>
 
@@ -51,30 +51,30 @@
             "Ismail", "Malick", "Nela", "Mia", "Jayden"
         ];
 
-        let credits = JSON.parse(localStorage.getItem("credits")) || {};
-        students.forEach(name => { if (!(name in credits)) credits[name] = 0; });
+        let m$ = JSON.parse(localStorage.getItem("m$")) || {};
+        students.forEach(name => { if (!(name in m$)) m$[name] = 0; });
 
         let selectedStudent = null;
 
-        function saveCredits() {
-            localStorage.setItem("credits", JSON.stringify(credits));
+        function saveM$() {
+            localStorage.setItem("m$", JSON.stringify(m$));
         }
 
         function updateUI() {
-            let creditsDiv = document.getElementById("credits");
-            creditsDiv.innerHTML = "";
+            let m$Div = document.getElementById("m$");
+            m$Div.innerHTML = "";
             students.forEach(name => {
                 let box = document.createElement("div");
                 box.classList.add("name-box");
-                box.innerText = `${name}: ${credits[name]} Credits`;
+                box.innerText = `${name}: ${m$[name]} M$`;
                 box.onclick = () => openPopup(name);
-                creditsDiv.appendChild(box);
+                m$Div.appendChild(box);
             });
         }
 
         function openPopup(name) {
             selectedStudent = name;
-            document.getElementById("popup-name").innerText = `${name}: ${credits[name]} Credits`;
+            document.getElementById("popup-name").innerText = `${name}: ${m$[name]} M$`;
             document.getElementById("popup").style.display = "block";
         }
 
@@ -82,26 +82,26 @@
             document.getElementById("popup").style.display = "none";
         }
 
-        function updateCredit(amount) {
+        function updateM$(amount) {
             if (selectedStudent) {
-                credits[selectedStudent] += amount;
-                saveCredits();
+                m$[selectedStudent] += amount;
+                saveM$();
                 updateUI();
                 openPopup(selectedStudent);
             }
         }
 
-        function changeAllCredits(amount) {
-            students.forEach(name => credits[name] += amount);
-            saveCredits();
+        function changeAllM$(amount) {
+            students.forEach(name => m$[name] += amount);
+            saveM$();
             updateUI();
         }
 
         function confirmReset() {
-            if (confirm("Bist du sicher, dass du alle Credits zurücksetzen möchtest?")) {
-                if (confirm("Wirklich alle Credits zurücksetzen?")) {
-                    students.forEach(name => credits[name] = 0);
-                    saveCredits();
+            if (confirm("Bist du sicher, dass du alle M$ zurücksetzen möchtest?")) {
+                if (confirm("Wirklich alle M$ zurücksetzen?")) {
+                    students.forEach(name => m$[name] = 0);
+                    saveM$();
                     updateUI();
                 }
             }
@@ -117,7 +117,7 @@
                 let box = document.createElement("div");
                 box.classList.add("toy-box");
                 if (toyData[name]) {
-                    box.classList.add("borrowed"); // Name wird rot, wenn ausgeliehen
+                    box.classList.add("borrowed");
                     box.innerText = `${name} hat ausgeliehen: ${toyData[name]}`;
                 } else {
                     box.innerText = name;
@@ -151,12 +151,11 @@
         updateUI();
         updateToyUI();
         updateClock();
-        setInterval(updateClock, 5000); // Aktualisiert die Uhr alle 5 Sekunden
+        setInterval(updateClock, 5000);
 
-        // Auto-Refresh alle 5 Minuten
         setInterval(function() {
             location.reload();
-        }, 300000);  // 300000 ms = 5 Minuten
+        }, 300000);
     </script>
 
 </body>
