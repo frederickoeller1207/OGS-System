@@ -48,8 +48,8 @@
         let students = [
             "Liam", "Irem", "Malin", "Leni", "Frida G.", "Lukas", "Niklas", "Frida R.", "Matthias", "Greta",
             "Emilia", "Oskar", "Lotte", "David", "Max", "Ronja", "Romy", "Sophie", "Artur", "Zehra",
-            "Ismail", "Malick", "Nela", "Mia", "Jayden", "Oli"
-        ];
+            "Ismail", "Malick", "Nela", "Mia", "Jayden"
+        ]; // Oli wurde entfernt
 
         let m$ = JSON.parse(localStorage.getItem("m$")) || {};
         students.forEach(name => { if (!(name in m$)) m$[name] = 0; });
