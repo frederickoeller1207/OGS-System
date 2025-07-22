@@ -1,8 +1,20 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Punktesystem</title>
+  <title>MouseCity Bank</title>
   <style>
+    body {
+      background-color: #0a3d0a;
+      color: white;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      backdrop-filter: blur(4px);
+    }
+    h2 {
+      font-size: 28px;
+      margin-bottom: 20px;
+    }
     .container {
       display: flex;
       flex-wrap: wrap;
@@ -10,21 +22,33 @@
     }
     .column {
       flex: 1;
-      min-width: 200px;
-      max-width: 250px;
+      min-width: 220px;
+      max-width: 300px;
     }
     .item {
-      margin: 5px;
-      padding: 5px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      padding: 10px;
+      margin-bottom: 10px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 14px;
+      font-size: 16px;
+      backdrop-filter: blur(3px);
     }
     button {
-      margin-left: 5px;
+      background-color: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      padding: 4px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.2s;
+    }
+    button:hover {
+      background-color: rgba(255, 255, 255, 0.2);
     }
   </style>
   <script type="module">
@@ -36,7 +60,7 @@
       authDomain: "punkte-45c20.firebaseapp.com",
       databaseURL: "https://punkte-45c20-default-rtdb.europe-west1.firebasedatabase.app",
       projectId: "punkte-45c20",
-      storageBucket: "punkte-45c20.appspot.com",
+      storageBucket: "punkte-45c20.firebasestorage.app",
       messagingSenderId: "931713539549",
       appId: "1:931713539549:web:e348bf38369639f1906a34"
     };
@@ -46,7 +70,6 @@
     const farben = ["⚪", "🔴", "🟡", "🟢"];
     const namen = ["Artur", "David", "Emilia", "Fridar", "Fridag", "Greta", "Irem", "Darya", "Jayden", "Leni", "Liam", "Lotte", "Lukas", "Jekaterina", "Malin", "Matthias", "Max", "Lamis", "Ella", "Niklas", "Oskar", "Ronja", "Romy", "Sophie", "Zehra"];
 
-    // Initialisiere alle Kinder mit Defaults, wenn noch kein Eintrag existiert
     namen.forEach(name => {
       const refName = ref(db, `kinder/${name}`);
       get(refName).then(snapshot => {
@@ -58,14 +81,17 @@
 
     function render() {
       const container = document.getElementById("app");
-      container.innerHTML = "<h2>Punkte</h2>";
+      container.innerHTML = "<h2>MouseCity Bank</h2>";
       const wrapper = document.createElement("div");
       wrapper.className = "container";
 
-      for (let i = 0; i < namen.length; i += 7) {
+      const spaltenAnzahl = 3;
+      const kinderProSpalte = Math.ceil(namen.length / spaltenAnzahl);
+
+      for (let i = 0; i < namen.length; i += kinderProSpalte) {
         const column = document.createElement("div");
         column.className = "column";
-        namen.slice(i, i + 7).forEach(name => {
+        namen.slice(i, i + kinderProSpalte).forEach(name => {
           const item = document.createElement("div");
           item.className = "item";
 
@@ -115,7 +141,7 @@
       };
 
       const resetUndAuswerten = document.createElement("button");
-      resetUndAuswerten.textContent = "Alle zurücksetzen & auswerten";
+      resetUndAuswerten.textContent = "Durchführen";
       resetUndAuswerten.onclick = () => {
         namen.forEach(name => {
           const refName = ref(db, `kinder/${name}`);
@@ -154,14 +180,14 @@
     function farbeToColor(f) {
       if (f === "🔴") return "red";
       if (f === "🟡") return "orange";
-      if (f === "🟢") return "green";
-      return "black";
+      if (f === "🟢") return "lime";
+      return "white";
     }
 
     window.onload = render;
   </script>
 </head>
 <body>
-  <div id="app" style="font-family:sans-serif"></div>
+  <div id="app"></div>
 </body>
 </html>
