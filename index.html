@@ -1,8 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Punktesystem</title>
+  <title>MouseCity Bank</title>
   <style>
+    body {
+      background-color: #004d00;
+      color: white;
+      font-family: sans-serif;
+    }
     .container {
       display: flex;
       flex-wrap: wrap;
@@ -22,6 +27,7 @@
       justify-content: space-between;
       align-items: center;
       font-size: 14px;
+      background-color: #006600;
     }
     button {
       margin-left: 5px;
@@ -46,7 +52,6 @@
     const farben = ["⚪", "🔴", "🟡", "🟢"];
     const namen = ["Artur", "David", "Emilia", "Fridar", "Fridag", "Greta", "Irem", "Darya", "Jayden", "Leni", "Liam", "Lotte", "Lukas", "Jekaterina", "Malin", "Matthias", "Max", "Lamis", "Ella", "Niklas", "Oskar", "Ronja", "Romy", "Sophie", "Zehra"];
 
-    // Initialisiere Kinder, wenn noch nicht vorhanden
     namen.forEach(name => {
       const refName = ref(db, `kinder/${name}`);
       get(refName).then(snapshot => {
@@ -58,14 +63,17 @@
 
     function render() {
       const container = document.getElementById("app");
-      container.innerHTML = "<h2>Punkte</h2>";
+      container.innerHTML = "<h2>MouseCity Bank</h2>";
       const wrapper = document.createElement("div");
       wrapper.className = "container";
 
-      for (let i = 0; i < namen.length; i += 7) {
+      const spaltenAnzahl = 3;
+      const kinderProSpalte = Math.ceil(namen.length / spaltenAnzahl);
+
+      for (let i = 0; i < namen.length; i += kinderProSpalte) {
         const column = document.createElement("div");
         column.className = "column";
-        namen.slice(i, i + 7).forEach(name => {
+        namen.slice(i, i + kinderProSpalte).forEach(name => {
           const item = document.createElement("div");
           item.className = "item";
 
@@ -115,7 +123,7 @@
       };
 
       const resetUndAuswerten = document.createElement("button");
-      resetUndAuswerten.textContent = "Alle zurücksetzen & auswerten";
+      resetUndAuswerten.textContent = "Durchführen";
       resetUndAuswerten.onclick = () => {
         namen.forEach(name => {
           const refName = ref(db, `kinder/${name}`);
@@ -154,14 +162,14 @@
     function farbeToColor(f) {
       if (f === "🔴") return "red";
       if (f === "🟡") return "orange";
-      if (f === "🟢") return "green";
-      return "black";
+      if (f === "🟢") return "lime";
+      return "white";
     }
 
     window.onload = render;
   </script>
 </head>
 <body>
-  <div id="app" style="font-family:sans-serif"></div>
+  <div id="app"></div>
 </body>
 </html>
