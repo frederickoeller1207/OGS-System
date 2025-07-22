@@ -46,6 +46,16 @@
     const farben = ["⚪", "🔴", "🟡", "🟢"];
     const namen = ["Artur", "David", "Emilia", "Fridar", "Fridag", "Greta", "Irem", "Darya", "Jayden", "Leni", "Liam", "Lotte", "Lukas", "Jekaterina", "Malin", "Matthias", "Max", "Lamis", "Ella", "Niklas", "Oskar", "Ronja", "Romy", "Sophie", "Zehra"];
 
+    // Initialisiere Kinder, wenn noch nicht vorhanden
+    namen.forEach(name => {
+      const refName = ref(db, `kinder/${name}`);
+      get(refName).then(snapshot => {
+        if (!snapshot.exists()) {
+          set(refName, { punkte: 0, farbe: "⚪" });
+        }
+      });
+    });
+
     function render() {
       const container = document.getElementById("app");
       container.innerHTML = "<h2>Punkte</h2>";
@@ -87,11 +97,7 @@
 
           const refName = ref(db, `kinder/${name}`);
           onValue(refName, snapshot => {
-            const val = snapshot.val();
-            if (!val) {
-              set(refName, { farbe: "⚪", punkte: 0 });
-              return;
-            }
+            const val = snapshot.val() || { farbe: "⚪", punkte: 0 };
             nameSpan.textContent = name;
             nameSpan.style.color = farbeToColor(val.farbe);
             punkteSpan.textContent = ` (${val.punkte}) – ${val.farbe}`;
@@ -105,7 +111,7 @@
       const gruenBtn = document.createElement("button");
       gruenBtn.textContent = "Alle auf Grün";
       gruenBtn.onclick = () => {
-        namen.forEach(name => update(ref(db, `kinder/${name}`), { farbe: "🌟" }));
+        namen.forEach(name => update(ref(db, `kinder/${name}`), { farbe: "🟢" }));
       };
 
       const resetUndAuswerten = document.createElement("button");
@@ -116,7 +122,7 @@
           get(refName).then(snapshot => {
             const val = snapshot.val() || { farbe: "⚪", punkte: 0 };
             let delta = 0;
-            if (val.farbe === "🌟") delta = 1;
+            if (val.farbe === "🟢") delta = 1;
             if (val.farbe === "🔴") delta = -1;
             update(refName, { punkte: val.punkte + delta, farbe: "⚪" });
           });
