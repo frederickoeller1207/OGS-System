@@ -2,6 +2,31 @@
 <html>
 <head>
   <title>Punktesystem</title>
+  <style>
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .column {
+      flex: 1;
+      min-width: 200px;
+      max-width: 250px;
+    }
+    .item {
+      margin: 5px;
+      padding: 5px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+    }
+    button {
+      margin-left: 5px;
+    }
+  </style>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
     import { getDatabase, ref, onValue, set, update, get } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
@@ -18,65 +43,85 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-
     const farben = ["⚪", "🔴", "🟡", "🟢"];
-
     const namen = ["Artur", "David", "Emilia", "Fridar", "Fridag", "Greta", "Irem", "Darya", "Jayden", "Leni", "Liam", "Lotte", "Lukas", "Jekaterina", "Malin", "Matthias", "Max", "Lamis", "Ella", "Niklas", "Oskar", "Ronja", "Romy", "Sophie", "Zehra"];
 
     function render() {
       const container = document.getElementById("app");
       container.innerHTML = "<h2>Punkte</h2>";
-      namen.forEach(name => {
-        const item = document.createElement("div");
-        item.id = name;
-        item.style.margin = "5px";
-        item.style.padding = "10px";
-        item.style.border = "1px solid #ccc";
-        item.style.borderRadius = "5px";
+      const wrapper = document.createElement("div");
+      wrapper.className = "container";
 
-        const nameSpan = document.createElement("span");
-        nameSpan.style.cursor = "pointer";
-        nameSpan.onclick = () => toggleFarbe(name);
+      for (let i = 0; i < namen.length; i += 7) {
+        const column = document.createElement("div");
+        column.className = "column";
+        namen.slice(i, i + 7).forEach(name => {
+          const item = document.createElement("div");
+          item.className = "item";
 
-        const punkteSpan = document.createElement("span");
-        punkteSpan.style.marginLeft = "10px";
+          const nameSpan = document.createElement("span");
+          nameSpan.style.cursor = "pointer";
+          nameSpan.onclick = () => toggleFarbe(name);
 
-        const plus = document.createElement("button");
-        plus.textContent = "+";
-        plus.onclick = e => {
-          e.stopPropagation();
-          changePunkte(name, 1);
-        };
+          const punkteSpan = document.createElement("span");
 
-        const minus = document.createElement("button");
-        minus.textContent = "–";
-        minus.onclick = e => {
-          e.stopPropagation();
-          changePunkte(name, -1);
-        };
+          const plus = document.createElement("button");
+          plus.textContent = "+";
+          plus.onclick = e => {
+            e.stopPropagation();
+            changePunkte(name, 1);
+          };
 
-        item.appendChild(nameSpan);
-        item.appendChild(punkteSpan);
-        item.appendChild(plus);
-        item.appendChild(minus);
+          const minus = document.createElement("button");
+          minus.textContent = "–";
+          minus.onclick = e => {
+            e.stopPropagation();
+            changePunkte(name, -1);
+          };
 
-        container.appendChild(item);
+          item.appendChild(nameSpan);
+          item.appendChild(punkteSpan);
+          item.appendChild(plus);
+          item.appendChild(minus);
+          column.appendChild(item);
 
-        const refName = ref(db, `kinder/${name}`);
-        onValue(refName, snapshot => {
-          const val = snapshot.val() || { farbe: "⚪", punkte: 0 };
-          nameSpan.textContent = name;
-          nameSpan.style.color = farbeToColor(val.farbe);
-          punkteSpan.textContent = ` (${val.punkte}) – ${val.farbe}`;
+          const refName = ref(db, `kinder/${name}`);
+          onValue(refName, snapshot => {
+            const val = snapshot.val() || { farbe: "⚪", punkte: 0 };
+            nameSpan.textContent = name;
+            nameSpan.style.color = farbeToColor(val.farbe);
+            punkteSpan.textContent = ` (${val.punkte}) – ${val.farbe}`;
+          });
         });
-      });
+        wrapper.appendChild(column);
+      }
+
+      container.appendChild(wrapper);
 
       const gruenBtn = document.createElement("button");
       gruenBtn.textContent = "Alle auf Grün";
       gruenBtn.onclick = () => {
         namen.forEach(name => update(ref(db, `kinder/${name}`), { farbe: "🟢" }));
       };
+
+      const resetUndAuswerten = document.createElement("button");
+      resetUndAuswerten.textContent = "Alle zurücksetzen & auswerten";
+      resetUndAuswerten.onclick = () => {
+        namen.forEach(name => {
+          const refName = ref(db, `kinder/${name}`);
+          get(refName).then(snapshot => {
+            const val = snapshot.val() || { farbe: "⚪", punkte: 0 };
+            let delta = 0;
+            if (val.farbe === "🟢") delta = 1;
+            if (val.farbe === "🔴") delta = -1;
+            update(refName, { punkte: val.punkte + delta, farbe: "⚪" });
+          });
+        });
+      };
+
+      container.appendChild(document.createElement("br"));
       container.appendChild(gruenBtn);
+      container.appendChild(resetUndAuswerten);
     }
 
     function toggleFarbe(name) {
@@ -102,30 +147,6 @@
       if (f === "🟢") return "green";
       return "black";
     }
-
-    function resetFarben() {
-      namen.forEach(name => update(ref(db, `kinder/${name}`), { farbe: "⚪" }));
-    }
-
-    function auswertenPunkte() {
-      namen.forEach(name => {
-        const refName = ref(db, `kinder/${name}`);
-        get(refName).then(snapshot => {
-          const val = snapshot.val() || { farbe: "⚪", punkte: 0 };
-          let delta = 0;
-          if (val.farbe === "🟢") delta = 1;
-          if (val.farbe === "🔴") delta = -1;
-          update(refName, { punkte: val.punkte + delta });
-        });
-      });
-    }
-
-    // Zeitgesteuert
-    setInterval(() => {
-      const now = new Date();
-      if (now.getHours() === 0 && now.getMinutes() === 0) resetFarben();
-      if (now.getHours() === 23 && now.getMinutes() === 59) auswertenPunkte();
-    }, 60000); // prüft jede Minute
 
     window.onload = render;
   </script>
