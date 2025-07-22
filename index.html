@@ -87,7 +87,11 @@
 
           const refName = ref(db, `kinder/${name}`);
           onValue(refName, snapshot => {
-            const val = snapshot.val() || { farbe: "⚪", punkte: 0 };
+            const val = snapshot.val();
+            if (!val) {
+              set(refName, { farbe: "⚪", punkte: 0 });
+              return;
+            }
             nameSpan.textContent = name;
             nameSpan.style.color = farbeToColor(val.farbe);
             punkteSpan.textContent = ` (${val.punkte}) – ${val.farbe}`;
@@ -101,7 +105,7 @@
       const gruenBtn = document.createElement("button");
       gruenBtn.textContent = "Alle auf Grün";
       gruenBtn.onclick = () => {
-        namen.forEach(name => update(ref(db, `kinder/${name}`), { farbe: "🟢" }));
+        namen.forEach(name => update(ref(db, `kinder/${name}`), { farbe: "🌟" }));
       };
 
       const resetUndAuswerten = document.createElement("button");
@@ -112,7 +116,7 @@
           get(refName).then(snapshot => {
             const val = snapshot.val() || { farbe: "⚪", punkte: 0 };
             let delta = 0;
-            if (val.farbe === "🟢") delta = 1;
+            if (val.farbe === "🌟") delta = 1;
             if (val.farbe === "🔴") delta = -1;
             update(refName, { punkte: val.punkte + delta, farbe: "⚪" });
           });
