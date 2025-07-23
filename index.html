@@ -1,159 +1,193 @@
 <!DOCTYPE html>
-<html lang="de">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mousecity Bank & Spielzeug-Ausleihe</title>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; background-color: green; color: white; display: flex; height: 100vh; margin: 0; }
-        .container { flex: 1; padding: 10px; border-right: 2px solid white; overflow: auto; }
-        .credits-list { display: flex; flex-wrap: wrap; justify-content: center; }
-        .name-box { margin: 5px; padding: 5px 10px; background: gray; cursor: pointer; white-space: nowrap; }
-        .popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; color: black; padding: 20px; display: none; border-radius: 10px; }
-        .popup button { margin: 5px; padding: 10px; }
-        .popup-close { background: red; color: white; cursor: pointer; }
-        .toy-list { display: flex; flex-wrap: wrap; justify-content: center; }
-        .toy-box { margin: 5px; padding: 10px; background: lightgray; color: black; }
-        .borrowed { color: red; font-weight: bold; }
-        .clock { font-size: 40px; margin-top: 20px; }
-    </style>
+  <title>MouseCity Bank</title>
+  <style>
+    body {
+      background-color: #0a3d0a;
+      color: white;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      backdrop-filter: blur(4px);
+    }
+    h2 {
+      font-size: 28px;
+      margin-bottom: 20px;
+    }
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .column {
+      flex: 1;
+      min-width: 220px;
+      max-width: 300px;
+    }
+    .item {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      padding: 10px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 16px;
+      backdrop-filter: blur(3px);
+    }
+    button {
+      background-color: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      padding: 4px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.2s;
+    }
+    button:hover {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+  </style>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+    import { getDatabase, ref, onValue, set, update, get } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAdPN2duh89Fx5rmYlFshdf0juhYNX_7fg",
+      authDomain: "punkte-45c20.firebaseapp.com",
+      databaseURL: "https://punkte-45c20-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "punkte-45c20",
+      storageBucket: "punkte-45c20.firebasestorage.app",
+      messagingSenderId: "931713539549",
+      appId: "1:931713539549:web:e348bf38369639f1906a34"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const farben = ["⚪", "🔴", "🟡", "🟢"];
+    const namen = ["Artur", "David", "Emilia", "Fridar", "Fridag", "Greta", "Irem", "Darya", "Jayden", "Leni", "Liam", "Lotte", "Lukas", "Jekaterina", "Malin", "Matthias", "Max", "Lamis", "Ella", "Niklas", "Oskar", "Ronja", "Romy", "Sophie", "Zehra"];
+
+    namen.forEach(name => {
+      const refName = ref(db, `kinder/${name}`);
+      get(refName).then(snapshot => {
+        if (!snapshot.exists()) {
+          set(refName, { punkte: 0, farbe: "⚪" });
+        }
+      });
+    });
+
+    function render() {
+      const container = document.getElementById("app");
+      container.innerHTML = "<h2>MouseCity Bank</h2>";
+      const wrapper = document.createElement("div");
+      wrapper.className = "container";
+
+      const spaltenAnzahl = 3;
+      const kinderProSpalte = Math.ceil(namen.length / spaltenAnzahl);
+
+      for (let i = 0; i < namen.length; i += kinderProSpalte) {
+        const column = document.createElement("div");
+        column.className = "column";
+        namen.slice(i, i + kinderProSpalte).forEach(name => {
+          const item = document.createElement("div");
+          item.className = "item";
+
+          const nameSpan = document.createElement("span");
+          nameSpan.style.cursor = "pointer";
+          nameSpan.onclick = () => toggleFarbe(name);
+
+          const punkteSpan = document.createElement("span");
+
+          const plus = document.createElement("button");
+          plus.textContent = "+";
+          plus.onclick = e => {
+            e.stopPropagation();
+            changePunkte(name, 1);
+          };
+
+          const minus = document.createElement("button");
+          minus.textContent = "–";
+          minus.onclick = e => {
+            e.stopPropagation();
+            changePunkte(name, -1);
+          };
+
+          item.appendChild(nameSpan);
+          item.appendChild(punkteSpan);
+          item.appendChild(plus);
+          item.appendChild(minus);
+          column.appendChild(item);
+
+          const refName = ref(db, `kinder/${name}`);
+          onValue(refName, snapshot => {
+            const val = snapshot.val() || { farbe: "⚪", punkte: 0 };
+            nameSpan.textContent = name;
+            nameSpan.style.color = farbeToColor(val.farbe);
+            punkteSpan.textContent = ` (${val.punkte}) – ${val.farbe}`;
+          });
+        });
+        wrapper.appendChild(column);
+      }
+
+      container.appendChild(wrapper);
+
+      const gruenBtn = document.createElement("button");
+      gruenBtn.textContent = "Alle auf Grün";
+      gruenBtn.onclick = () => {
+        namen.forEach(name => update(ref(db, `kinder/${name}`), { farbe: "🟢" }));
+      };
+
+      const resetUndAuswerten = document.createElement("button");
+      resetUndAuswerten.textContent = "Durchführen";
+      resetUndAuswerten.onclick = () => {
+        namen.forEach(name => {
+          const refName = ref(db, `kinder/${name}`);
+          get(refName).then(snapshot => {
+            const val = snapshot.val() || { farbe: "⚪", punkte: 0 };
+            let delta = 0;
+            if (val.farbe === "🟢") delta = 1;
+            if (val.farbe === "🔴") delta = -1;
+            update(refName, { punkte: val.punkte + delta, farbe: "⚪" });
+          });
+        });
+      };
+
+      container.appendChild(document.createElement("br"));
+      container.appendChild(gruenBtn);
+      container.appendChild(resetUndAuswerten);
+    }
+
+    function toggleFarbe(name) {
+      const refName = ref(db, `kinder/${name}`);
+      get(refName).then(snapshot => {
+        const val = snapshot.val() || { farbe: "⚪", punkte: 0 };
+        const idx = (farben.indexOf(val.farbe) + 1) % farben.length;
+        update(refName, { farbe: farben[idx] });
+      });
+    }
+
+    function changePunkte(name, delta) {
+      const refName = ref(db, `kinder/${name}`);
+      get(refName).then(snapshot => {
+        const val = snapshot.val() || { farbe: "⚪", punkte: 0 };
+        update(refName, { punkte: val.punkte + delta });
+      });
+    }
+
+    function farbeToColor(f) {
+      if (f === "🔴") return "red";
+      if (f === "🟡") return "orange";
+      if (f === "🟢") return "lime";
+      return "white";
+    }
+
+    window.onload = render;
+  </script>
 </head>
 <body>
-
-    <!-- Mousecity Bank -->
-    <div class="container">
-        <h1>Mousecity Bank</h1>
-        <button onclick="changeAllM$(1)">Allen +1</button>
-        <button onclick="changeAllM$(-1)">Allen -1</button>
-        <button onclick="confirmReset()">Alle zurücksetzen</button>
-        <div id="m$" class="credits-list"></div>
-    </div>
-
-    <!-- Spielzeug-Ausleihe -->
-    <div class="container">
-        <h1>Spielzeug-Ausleihe</h1>
-        <div id="toys" class="toy-list"></div>
-        <div id="clock" class="clock"></div> <!-- Uhr hinzufügen -->
-    </div>
-
-    <!-- Popup für M$-Vergabe -->
-    <div id="popup" class="popup">
-        <h2 id="popup-name"></h2>
-        <button onclick="updateM$(1)">+1</button>
-        <button onclick="updateM$(-1)">-1</button>
-        <button class="popup-close" onclick="closePopup()">X</button>
-    </div>
-
-    <script>
-        let students = [
-            "Liam", "Irem", "Malin", "Leni", "Frida G.", "Lukas", "Niklas", "Frida R.", "Matthias", "Greta",
-            "Emilia", "Oskar", "Lotte", "David", "Max", "Ronja", "Romy", "Sophie", "Artur", "Zehra",
-            "Ismail", "Malick", "Nela", "Mia", "Jayden"
-        ]; // Oli wurde entfernt
-
-        let m$ = JSON.parse(localStorage.getItem("m$")) || {};
-        students.forEach(name => { if (!(name in m$)) m$[name] = 0; });
-
-        let selectedStudent = null;
-
-        function saveM$() {
-            localStorage.setItem("m$", JSON.stringify(m$));
-        }
-
-        function updateUI() {
-            let m$Div = document.getElementById("m$");
-            m$Div.innerHTML = "";
-            students.forEach(name => {
-                let box = document.createElement("div");
-                box.classList.add("name-box");
-                box.innerText = `${name}: ${m$[name]} M$`;
-                box.onclick = () => openPopup(name);
-                m$Div.appendChild(box);
-            });
-        }
-
-        function openPopup(name) {
-            selectedStudent = name;
-            document.getElementById("popup-name").innerText = `${name}: ${m$[name]} M$`;
-            document.getElementById("popup").style.display = "block";
-        }
-
-        function closePopup() {
-            document.getElementById("popup").style.display = "none";
-        }
-
-        function updateM$(amount) {
-            if (selectedStudent) {
-                m$[selectedStudent] += amount;
-                saveM$();
-                updateUI();
-                openPopup(selectedStudent);
-            }
-        }
-
-        function changeAllM$(amount) {
-            students.forEach(name => m$[name] += amount);
-            saveM$();
-            updateUI();
-        }
-
-        function confirmReset() {
-            if (confirm("Bist du sicher, dass du alle M$ zurücksetzen möchtest?")) {
-                if (confirm("Wirklich alle M$ zurücksetzen?")) {
-                    students.forEach(name => m$[name] = 0);
-                    saveM$();
-                    updateUI();
-                }
-            }
-        }
-
-        // Spielzeug-Ausleihe
-        let toyData = JSON.parse(localStorage.getItem("toyData")) || {};
-
-        function updateToyUI() {
-            let toyDiv = document.getElementById("toys");
-            toyDiv.innerHTML = "";
-            students.forEach(name => {
-                let box = document.createElement("div");
-                box.classList.add("toy-box");
-                if (toyData[name]) {
-                    box.classList.add("borrowed"); // Name wird rot, wenn ausgeliehen
-                    box.innerText = `${name} hat ausgeliehen: ${toyData[name]}`;
-                } else {
-                    box.innerText = name;
-                }
-                box.onclick = () => borrowToy(name);
-                toyDiv.appendChild(box);
-            });
-        }
-
-        function borrowToy(name) {
-            let toy = prompt("Welches Spielzeug wird ausgeliehen?", toyData[name] || "");
-            if (toy !== null) {
-                if (toy === "") {
-                    delete toyData[name];
-                } else {
-                    toyData[name] = toy;
-                }
-                localStorage.setItem("toyData", JSON.stringify(toyData));
-                updateToyUI();
-            }
-        }
-
-        function updateClock() {
-            let now = new Date();
-            let hours = now.getHours().toString().padStart(2, '0');
-            let minutes = now.getMinutes().toString().padStart(2, '0');
-            let timeString = `${hours}:${minutes}`;
-            document.getElementById("clock").innerText = timeString;
-        }
-
-        updateUI();
-        updateToyUI();
-        updateClock();
-        setInterval(updateClock, 5000); // Aktualisiert die Uhr alle 5 Sekunden
-
-    </script>
-
+  <div id="app"></div>
 </body>
 </html>
