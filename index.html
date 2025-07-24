@@ -60,14 +60,15 @@
       authDomain: "punkte-45c20.firebaseapp.com",
       databaseURL: "https://punkte-45c20-default-rtdb.europe-west1.firebasedatabase.app",
       projectId: "punkte-45c20",
-      storageBucket: "punkte-45c20.firebasestorage.app",
+      storageBucket: "punkte-45c20.appspot.com",
       messagingSenderId: "931713539549",
       appId: "1:931713539549:web:e348bf38369639f1906a34"
     };
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    const farben = ["⚪", "🔴", "🟡", "🟢"];
+
+    const farben = ["⚪", "🔴", "🟡", "🟢", "⚫", "🟣"];
     const namen = ["Artur", "David", "Emilia", "Fridar", "Fridag", "Greta", "Irem", "Darya", "Jayden", "Leni", "Liam", "Lotte", "Lukas", "Jekaterina", "Malin", "Matthias", "Max", "Lamis", "Ella", "Niklas", "Oskar", "Ronja", "Romy", "Sophie", "Zehra"];
 
     namen.forEach(name => {
@@ -149,7 +150,9 @@
             const val = snapshot.val() || { farbe: "⚪", punkte: 0 };
             let delta = 0;
             if (val.farbe === "🟢") delta = 1;
-            if (val.farbe === "🔴") delta = -1;
+            else if (val.farbe === "🔴") delta = -1;
+            else if (val.farbe === "⚫") delta = -2;
+            else if (val.farbe === "🟣") delta = 2;
             update(refName, { punkte: val.punkte + delta, farbe: "⚪" });
           });
         });
@@ -181,6 +184,8 @@
       if (f === "🔴") return "red";
       if (f === "🟡") return "orange";
       if (f === "🟢") return "lime";
+      if (f === "⚫") return "black";
+      if (f === "🟣") return "deeppink";
       return "white";
     }
 
