@@ -1,61 +1,83 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
 <head>
-  <title>MouseCity Bank</title>
+  <meta charset="UTF-8" />
+  <title>Mäusegruppe Terminal</title>
+  <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;600&display=swap" rel="stylesheet">
   <style>
     body {
-      background-color: #0a3d0a;
-      color: white;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      margin: 0;
+      font-family: 'SF Pro Display', sans-serif;
+      background-color: #f9f9fb;
       padding: 20px;
-      backdrop-filter: blur(4px);
+      color: #1c1c1e;
     }
-    h2 {
-      font-size: 26px;
-      margin-bottom: 16px;
+    h1 {
+      margin-bottom: 30px;
+      font-size: 28px;
+      font-weight: 600;
+      text-align: center;
     }
-    .container {
+    .menu {
+      margin-bottom: 30px;
       display: flex;
-      flex-wrap: wrap;
+      flex-direction: column;
+      align-items: center;
       gap: 12px;
     }
-    .column {
-      flex: 1;
-      min-width: 180px;
-      max-width: 220px;
-    }
-    .item {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 10px;
-      padding: 6px;
-      margin-bottom: 8px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 14px;
-      backdrop-filter: blur(3px);
-    }
     button {
-      background-color: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      color: white;
-      padding: 2px 8px;
-      border-radius: 6px;
+      background-color: #ffffff;
+      border: 1px solid #ccc;
+      border-radius: 12px;
+      padding: 14px 24px;
+      font-size: 17px;
+      font-weight: 500;
+      color: #000;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
       cursor: pointer;
-      font-size: 14px;
-      transition: background-color 0.2s;
+      width: 90%;
+      max-width: 320px;
+      transition: all 0.2s ease, transform 0.1s ease;
     }
     button:hover {
-      background-color: rgba(255, 255, 255, 0.2);
+      background-color: #f0f0f5;
+    }
+    button:active {
+      background-color: #e0e0e5;
+      transform: scale(0.97);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1) inset;
     }
   </style>
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
-    import { getDatabase, ref, onValue, set, update, get } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
+</head>
+<body>
+  <h1 id="title">Mäusegruppe Terminal</h1>
+  <div class="menu">
+    <button id="btn-ausleihe">Spielzeug Ausleihe</button>
+    <button id="btn-checkout">Checkout</button>
+    <button id="btn-mausdollar">Mausdollar hinzufügen</button>
+  </div>
+  <div id="view"></div>
 
-    const firebaseConfig = {
+  <script type="module">
+    import { initializeApp as initApp1 } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-app.js";
+    import { getDatabase as getDB1, ref as ref1, get as get1, onValue as onVal1, set as set1 } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-database.js";
+    import { initializeApp as initApp2 } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-app.js";
+    import { getDatabase as getDB2, ref as ref2, update as update2 } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-database.js";
+
+    // Datenbank 1: Admin + Ausleihe
+    const config1 = {
+      apiKey: "AIzaSyAQaNKUa-RKvUcwlPpWnEyKxcVjYV6cZuU",
+      authDomain: "gesamt-dae4e.firebaseapp.com",
+      databaseURL: "https://gesamt-dae4e-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "gesamt-dae4e",
+      storageBucket: "gesamt-dae4e.appspot.com",
+      messagingSenderId: "844023612743",
+      appId: "1:844023612743:web:0821aa894541f89a7df862"
+    };
+    const app1 = initApp1(config1, "app1");
+    const db1 = getDB1(app1);
+
+    // Datenbank 2: MausCityBank
+    const config2 = {
       apiKey: "AIzaSyAdPN2duh89Fx5rmYlFshdf0juhYNX_7fg",
       authDomain: "punkte-45c20.firebaseapp.com",
       databaseURL: "https://punkte-45c20-default-rtdb.europe-west1.firebasedatabase.app",
@@ -64,135 +86,130 @@
       messagingSenderId: "931713539549",
       appId: "1:931713539549:web:e348bf38369639f1906a34"
     };
+    const app2 = initApp2(config2, "app2");
+    const db2 = getDB2(app2);
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+    const view = document.getElementById("view");
 
-    const farben = ["⚪", "🔴", "🟡", "🟢", "⚫", "🟣"];
-    const namen = ["Artur", "David", "Emilia", "Fridar", "Fridag", "Greta", "Irem", "Darya", "Jayden", "Leni", "Liam", "Lotte", "Lukas", "Jekaterina", "Malin", "Matthias", "Max", "Lamis", "Ella", "Niklas", "Oskar", "Ronja", "Romy", "Sophie", "Zehra"];
+    document.getElementById("btn-ausleihe").onclick = loadAusleihe;
+    document.getElementById("btn-checkout").onclick = loadCheckout;
+    document.getElementById("btn-mausdollar").onclick = mausdollarAnfrage;
 
-    namen.forEach(name => {
-      const refName = ref(db, `kinder/${name}`);
-      get(refName).then(snapshot => {
-        if (!snapshot.exists()) {
-          set(refName, { punkte: 0, farbe: "⚪" });
-        }
-      });
-    });
-
-    function render() {
-      const container = document.getElementById("app");
-      container.innerHTML = "<h2>MouseCity Bank</h2>";
-      const wrapper = document.createElement("div");
-      wrapper.className = "container";
-
-      const spaltenAnzahl = 3;
-      const kinderProSpalte = Math.ceil(namen.length / spaltenAnzahl);
-
-      for (let i = 0; i < namen.length; i += kinderProSpalte) {
-        const column = document.createElement("div");
-        column.className = "column";
-        namen.slice(i, i + kinderProSpalte).forEach(name => {
-          const item = document.createElement("div");
-          item.className = "item";
-
-          const nameSpan = document.createElement("span");
-          nameSpan.style.cursor = "pointer";
-          nameSpan.onclick = () => toggleFarbe(name);
-
-          const punkteSpan = document.createElement("span");
-
-          const plus = document.createElement("button");
-          plus.textContent = "+";
-          plus.onclick = e => {
-            e.stopPropagation();
-            changePunkte(name, 1);
-          };
-
-          const minus = document.createElement("button");
-          minus.textContent = "–";
-          minus.onclick = e => {
-            e.stopPropagation();
-            changePunkte(name, -1);
-          };
-
-          item.appendChild(nameSpan);
-          item.appendChild(punkteSpan);
-          item.appendChild(plus);
-          item.appendChild(minus);
-          column.appendChild(item);
-
-          const refName = ref(db, `kinder/${name}`);
-          onValue(refName, snapshot => {
-            const val = snapshot.val() || { farbe: "⚪", punkte: 0 };
-            nameSpan.textContent = name;
-            nameSpan.style.color = farbeToColor(val.farbe);
-            punkteSpan.textContent = ` (${val.punkte}) – ${val.farbe}`;
-          });
+    function loadAusleihe() {
+      view.innerHTML = "<h2>Spielzeug Ausleihe</h2>";
+      onVal1(ref1(db1, "kinder"), snapshot => {
+        view.innerHTML = "<h2>Spielzeug Ausleihe</h2>";
+        snapshot.forEach(childSnap => {
+          const name = childSnap.key;
+          const btn = document.createElement("button");
+          btn.textContent = name;
+          btn.onclick = () => ausleihen(name);
+          view.appendChild(btn);
         });
-        wrapper.appendChild(column);
+      });
+    }
+
+    async function ausleihen(name) {
+      const ausleiheSnap = await get1(ref1(db1, `ausleihen/${name}`));
+      if (ausleiheSnap.exists() && ausleiheSnap.val().bestätigt === false) {
+        alert("Bitte gib das ausgeliehene Spielzeug zurück.");
+        return;
       }
-
-      container.appendChild(wrapper);
-
-      const gruenBtn = document.createElement("button");
-      gruenBtn.textContent = "Alle auf Grün";
-      gruenBtn.onclick = () => {
-        namen.forEach(name => update(ref(db, `kinder/${name}`), { farbe: "🟢" }));
-      };
-
-      const resetUndAuswerten = document.createElement("button");
-      resetUndAuswerten.textContent = "Durchführen";
-      resetUndAuswerten.onclick = () => {
-        namen.forEach(name => {
-          const refName = ref(db, `kinder/${name}`);
-          get(refName).then(snapshot => {
-            const val = snapshot.val() || { farbe: "⚪", punkte: 0 };
-            let delta = 0;
-            if (val.farbe === "🟢") delta = 1;
-            else if (val.farbe === "🔴") delta = -1;
-            else if (val.farbe === "⚫") delta = -2;
-            else if (val.farbe === "🟣") delta = 2;
-            update(refName, { punkte: val.punkte + delta, farbe: "⚪" });
-          });
+      const nummer = prompt(`${name}, gib bitte die Spielzeugnummer ein:`);
+      if (!nummer) return;
+      const spielzeugeSnap = await get1(ref1(db1, "spielzeuge"));
+      const spielzeuge = spielzeugeSnap.exists() ? spielzeugeSnap.val() : {};
+      if (spielzeuge[nummer]) {
+        await set1(ref1(db1, `ausleihen/${name}`), {
+          spielzeug: spielzeuge[nummer],
+          nummer: nummer,
+          zeit: new Date().toISOString(),
+          bestätigt: false
         });
+        const msg = document.createElement("div");
+        msg.textContent = `${spielzeuge[nummer]} erfolgreich ausgeliehen.`;
+        msg.style = "margin-top: 20px; font-weight: bold;";
+        view.appendChild(msg);
+        setTimeout(() => msg.remove(), 3000);
+      } else {
+        alert("Ungültige Nummer.");
+      }
+    }
+
+    function loadCheckout() {
+      view.innerHTML = "<h2>Checkout</h2>";
+      onVal1(ref1(db1, "kinder"), snapshot => {
+        view.innerHTML = "<h2>Checkout</h2>";
+        snapshot.forEach(childSnap => {
+          const name = childSnap.key;
+          const link = childSnap.val().link;
+          const btn = document.createElement("button");
+          btn.textContent = name;
+          btn.onclick = () => {
+            if (link) window.location.href = link;
+            else alert("Kein Link hinterlegt.");
+          };
+          view.appendChild(btn);
+        });
+      });
+    }
+
+    function mausdollarAnfrage() {
+      view.innerHTML = "<h2>Mausdollar hinzufügen</h2>";
+      const kinder = [];
+      onVal1(ref1(db1, "kinder"), snapshot => {
+        snapshot.forEach(childSnap => {
+          kinder.push(childSnap.key);
+        });
+        kinder.forEach(name => {
+          const btn = document.createElement("button");
+          btn.textContent = name;
+          btn.onclick = () => waehleBetrag(name);
+          view.appendChild(btn);
+        });
+      });
+    }
+
+    function waehleBetrag(name) {
+      view.innerHTML = `<h2>${name}: Wie viele Mausdollar?</h2>`;
+      for (let i = 1; i <= 5; i++) {
+        const btn = document.createElement("button");
+        btn.textContent = `${i}`;
+        btn.onclick = () => waehleGrund(name, i);
+        view.appendChild(btn);
+      }
+    }
+
+    function waehleGrund(name, betrag) {
+      view.innerHTML = `<h2>${name}: Wähle einen Grund</h2>`;
+      const gruende = ["Quiz", "Kurze Hilfe", "Malwettbewerb", "Tischdienst"];
+      gruende.forEach(g => {
+        const btn = document.createElement("button");
+        btn.textContent = g;
+        btn.onclick = () => sendeAnfrage(name, betrag, g);
+        view.appendChild(btn);
+      });
+
+      const eigenerInput = document.createElement("input");
+      eigenerInput.placeholder = "Eigener Grund";
+      eigenerInput.style = "margin-top:10px;display:block;width:80%;padding:8px;border-radius:8px;border:1px solid #ccc;";
+      view.appendChild(eigenerInput);
+
+      const absendenBtn = document.createElement("button");
+      absendenBtn.textContent = "Absenden";
+      absendenBtn.onclick = () => {
+        const g = eigenerInput.value.trim();
+        if (g) sendeAnfrage(name, betrag, g);
       };
-
-      container.appendChild(document.createElement("br"));
-      container.appendChild(gruenBtn);
-      container.appendChild(resetUndAuswerten);
+      view.appendChild(absendenBtn);
     }
 
-    function toggleFarbe(name) {
-      const refName = ref(db, `kinder/${name}`);
-      get(refName).then(snapshot => {
-        const val = snapshot.val() || { farbe: "⚪", punkte: 0 };
-        const idx = (farben.indexOf(val.farbe) + 1) % farben.length;
-        update(refName, { farbe: farben[idx] });
-      });
+    function sendeAnfrage(name, betrag, grund) {
+      const zeit = new Date().toISOString();
+      const anfrageRef = ref1(db1, `anfragen/${Date.now()}_${name}`);
+      set1(anfrageRef, { name, betrag, grund, zeit });
+      view.innerHTML = `<h2>Anfrage gesendet! (${betrag} Mausdollar für: ${grund})</h2>`;
     }
-
-    function changePunkte(name, delta) {
-      const refName = ref(db, `kinder/${name}`);
-      get(refName).then(snapshot => {
-        const val = snapshot.val() || { farbe: "⚪", punkte: 0 };
-        update(refName, { punkte: val.punkte + delta });
-      });
-    }
-
-    function farbeToColor(f) {
-      if (f === "🔴") return "red";
-      if (f === "🟡") return "orange";
-      if (f === "🟢") return "lime";
-      if (f === "⚫") return "black";
-      if (f === "🟣") return "deeppink";
-      return "white";
-    }
-
-    window.onload = render;
   </script>
-</head>
-<body>
-  <div id="app"></div>
 </body>
 </html>
