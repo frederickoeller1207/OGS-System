@@ -50,6 +50,12 @@
     button:hover {
       background-color: rgba(255, 255, 255, 0.2);
     }
+    .small-button {
+      padding: 2px 8px;
+      font-size: 14px;
+      border-radius: 6px;
+      margin-top: 4px;
+    }
     .ausland-wrapper {
       display: none;
       flex-wrap: wrap;
@@ -149,14 +155,15 @@
           wrapper.appendChild(column);
         }
 
-        // Auslandskonten Button
+        // Auslandskonten Toggle Button
         const toggleBtn = document.createElement("button");
-        toggleBtn.textContent = "Auslandskonten einblenden";
+        toggleBtn.className = "small-button";
+        toggleBtn.textContent = "Auslandskonten ⬇";
         toggleBtn.onclick = () => {
           auslandWrapper.classList.toggle("show");
           toggleBtn.textContent = auslandWrapper.classList.contains("show")
-            ? "Auslandskonten ausblenden"
-            : "Auslandskonten einblenden";
+            ? "Auslandskonten ⬆"
+            : "Auslandskonten ⬇";
         };
         wrapper.appendChild(toggleBtn);
 
