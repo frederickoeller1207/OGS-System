@@ -50,6 +50,26 @@
     button:hover {
       background-color: rgba(255, 255, 255, 0.2);
     }
+    .ausland-wrapper {
+      display: none;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+      width: 100%;
+    }
+    .ausland-wrapper.show {
+      display: flex;
+    }
+    .ausland-item {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 13px;
+      width: calc(33% - 8px);
+      box-sizing: border-box;
+      text-align: center;
+    }
   </style>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
@@ -129,44 +149,32 @@
           wrapper.appendChild(column);
         }
 
-        const auslandColumn = document.createElement("div");
-        auslandColumn.className = "column";
+        // Auslandskonten Button
+        const toggleBtn = document.createElement("button");
+        toggleBtn.textContent = "Auslandskonten einblenden";
+        toggleBtn.onclick = () => {
+          auslandWrapper.classList.toggle("show");
+          toggleBtn.textContent = auslandWrapper.classList.contains("show")
+            ? "Auslandskonten ausblenden"
+            : "Auslandskonten einblenden";
+        };
+        wrapper.appendChild(toggleBtn);
 
-        const auslandTitle = document.createElement("h3");
-        auslandTitle.textContent = "Auslandskonto";
-        auslandTitle.style.fontSize = "18px";
-        auslandColumn.appendChild(auslandTitle);
+        // Auslandskonten Anzeige
+        const auslandWrapper = document.createElement("div");
+        auslandWrapper.className = "ausland-wrapper";
 
         auslandskonten.forEach(({ name, punkte }) => {
           const item = document.createElement("div");
-          item.className = "item";
-          item.style.fontSize = "12px";
-          item.style.padding = "4px";
-
-          const nameSpan = document.createElement("span");
-          nameSpan.textContent = name;
-
-          const punkteSpan = document.createElement("span");
-          punkteSpan.textContent = `(${punkte})`;
-
-          const plus = document.createElement("button");
-          plus.textContent = "+";
-          plus.onclick = () => changePunkte(name, 1);
-
-          const minus = document.createElement("button");
-          minus.textContent = "–";
-          minus.onclick = () => changePunkte(name, -1);
-
-          item.appendChild(nameSpan);
-          item.appendChild(punkteSpan);
-          item.appendChild(plus);
-          item.appendChild(minus);
-          auslandColumn.appendChild(item);
+          item.className = "ausland-item";
+          item.textContent = `${name} – ${punkte}`;
+          auslandWrapper.appendChild(item);
         });
 
-        wrapper.appendChild(auslandColumn);
+        wrapper.appendChild(auslandWrapper);
         container.appendChild(wrapper);
 
+        // Steuerbuttons
         const gruenBtn = document.createElement("button");
         gruenBtn.textContent = "Alle auf Grün";
         gruenBtn.onclick = () => {
@@ -196,7 +204,8 @@
         container.appendChild(resetUndAuswerten);
       });
     }
-function toggleFarbe(name, aktuelleFarbe) {
+
+    function toggleFarbe(name, aktuelleFarbe) {
       const idx = (farben.indexOf(aktuelleFarbe) + 1) % farben.length;
       update(ref(db, `kinder/${name}`), { farbe: farben[idx] });
     }
