@@ -124,10 +124,33 @@
       const spaltenAnzahl = 3;
       const kinderProSpalte = Math.ceil(normaleKonten.length / spaltenAnzahl);
 
+      const auslandWrapper = document.createElement("div");
+      auslandWrapper.className = "ausland-wrapper";
+
+      const toggleBtn = document.createElement("div");
+      toggleBtn.className = "item";
+      toggleBtn.style.justifyContent = "center";
+      toggleBtn.style.cursor = "pointer";
+      toggleBtn.textContent = "Auslandskonten ⬇";
+
+      toggleBtn.onclick = () => {
+        auslandWrapper.classList.toggle("show");
+        toggleBtn.textContent = auslandWrapper.classList.contains("show")
+          ? "Auslandskonten ⬆"
+          : "Auslandskonten ⬇";
+      };
+
+      auslandskonten.forEach(({ name, punkte }) => {
+        const item = document.createElement("div");
+        item.className = "ausland-item";
+        item.textContent = `${name} – ${punkte}`;
+        auslandWrapper.appendChild(item);
+      });
+
       for (let i = 0; i < normaleKonten.length; i += kinderProSpalte) {
         const column = document.createElement("div");
         column.className = "column";
-        normaleKonten.slice(i, i + kinderProSpalte).forEach(({ name, punkte, farbe }) => {
+        normaleKonten.slice(i, i + kinderProSpalte).forEach(({ name, punkte, farbe }, index, arr) => {
           const item = document.createElement("div");
           item.className = "item";
 
@@ -153,33 +176,16 @@
           item.appendChild(plus);
           item.appendChild(minus);
           column.appendChild(item);
+
+          // Wenn letztes Konto in letzter Spalte: Toggle-Button + Auslandskonten
+          if (i + index + 1 === normaleKonten.length) {
+            column.appendChild(toggleBtn);
+            column.appendChild(auslandWrapper);
+          }
         });
         wrapper.appendChild(column);
       }
 
-      const toggleBtn = document.createElement("button");
-      toggleBtn.className = "small-button";
-      toggleBtn.textContent = "Auslandskonten ⬇";
-
-      const auslandWrapper = document.createElement("div");
-      auslandWrapper.className = "ausland-wrapper";
-
-      toggleBtn.onclick = () => {
-        auslandWrapper.classList.toggle("show");
-        toggleBtn.textContent = auslandWrapper.classList.contains("show")
-          ? "Auslandskonten ⬆"
-          : "Auslandskonten ⬇";
-      };
-      wrapper.appendChild(toggleBtn);
-
-      auslandskonten.forEach(({ name, punkte }) => {
-        const item = document.createElement("div");
-        item.className = "ausland-item";
-        item.textContent = `${name} – ${punkte}`;
-        auslandWrapper.appendChild(item);
-      });
-
-      wrapper.appendChild(auslandWrapper);
       container.appendChild(wrapper);
 
       const gruenBtn = document.createElement("button");
