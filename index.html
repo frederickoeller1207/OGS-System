@@ -93,10 +93,16 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-
     const farben = ["⚪", "🔴", "🟡", "🟢", "⚫", "🟣"];
 
-    function render() {
+    window.onload = () => {
+      const refKinder = ref(db, "kinder");
+      onValue(refKinder, (snapshot) => {
+        renderData(snapshot);
+      });
+    };
+
+    function renderData(snapshot) {
       const container = document.getElementById("app");
       container.innerHTML = "<h2>MouseCity Bank</h2>";
       const wrapper = document.createElement("div");
@@ -105,111 +111,104 @@
       const normaleKonten = [];
       const auslandskonten = [];
 
-      const refKinder = ref(db, "kinder");
-      get(refKinder).then(snapshot => {
-        if (!snapshot.exists()) return;
-
-        snapshot.forEach(childSnap => {
-          const name = childSnap.key;
-          const data = childSnap.val();
-          if (data.farbe === undefined) {
-            auslandskonten.push({ name, punkte: data.punkte || 0 });
-          } else {
-            normaleKonten.push({ name, punkte: data.punkte || 0, farbe: data.farbe });
-          }
-        });
-
-        const spaltenAnzahl = 3;
-        const kinderProSpalte = Math.ceil(normaleKonten.length / spaltenAnzahl);
-
-        for (let i = 0; i < normaleKonten.length; i += kinderProSpalte) {
-          const column = document.createElement("div");
-          column.className = "column";
-          normaleKonten.slice(i, i + kinderProSpalte).forEach(({ name, punkte, farbe }) => {
-            const item = document.createElement("div");
-            item.className = "item";
-
-            const nameSpan = document.createElement("span");
-            nameSpan.textContent = name;
-            nameSpan.style.color = farbeToColor(farbe);
-            nameSpan.style.cursor = "pointer";
-            nameSpan.onclick = () => toggleFarbe(name, farbe);
-
-            const punkteSpan = document.createElement("span");
-            punkteSpan.textContent = `(${punkte}) – ${farbe}`;
-
-            const plus = document.createElement("button");
-            plus.textContent = "+";
-            plus.onclick = () => changePunkte(name, 1);
-
-            const minus = document.createElement("button");
-            minus.textContent = "–";
-            minus.onclick = () => changePunkte(name, -1);
-
-            item.appendChild(nameSpan);
-            item.appendChild(punkteSpan);
-            item.appendChild(plus);
-            item.appendChild(minus);
-            column.appendChild(item);
-          });
-          wrapper.appendChild(column);
+      snapshot.forEach(childSnap => {
+        const name = childSnap.key;
+        const data = childSnap.val();
+        if (data.farbe === undefined) {
+          auslandskonten.push({ name, punkte: data.punkte || 0 });
+        } else {
+          normaleKonten.push({ name, punkte: data.punkte || 0, farbe: data.farbe });
         }
-
-        // Auslandskonten Toggle Button
-        const toggleBtn = document.createElement("button");
-        toggleBtn.className = "small-button";
-        toggleBtn.textContent = "Auslandskonten ⬇";
-        toggleBtn.onclick = () => {
-          auslandWrapper.classList.toggle("show");
-          toggleBtn.textContent = auslandWrapper.classList.contains("show")
-            ? "Auslandskonten ⬆"
-            : "Auslandskonten ⬇";
-        };
-        wrapper.appendChild(toggleBtn);
-
-        // Auslandskonten Anzeige
-        const auslandWrapper = document.createElement("div");
-        auslandWrapper.className = "ausland-wrapper";
-
-        auslandskonten.forEach(({ name, punkte }) => {
-          const item = document.createElement("div");
-          item.className = "ausland-item";
-          item.textContent = `${name} – ${punkte}`;
-          auslandWrapper.appendChild(item);
-        });
-
-        wrapper.appendChild(auslandWrapper);
-        container.appendChild(wrapper);
-
-        // Steuerbuttons
-        const gruenBtn = document.createElement("button");
-        gruenBtn.textContent = "Alle auf Grün";
-        gruenBtn.onclick = () => {
-          normaleKonten.forEach(({ name }) =>
-            update(ref(db, `kinder/${name}`), { farbe: "🟢" })
-          );
-        };
-
-        const resetUndAuswerten = document.createElement("button");
-        resetUndAuswerten.textContent = "Durchführen";
-        resetUndAuswerten.onclick = () => {
-          normaleKonten.forEach(({ name, farbe, punkte }) => {
-            let delta = 0;
-            if (farbe === "🟢") delta = 1;
-            else if (farbe === "🔴") delta = -1;
-            else if (farbe === "⚫") delta = -2;
-            else if (farbe === "🟣") delta = 2;
-            update(ref(db, `kinder/${name}`), {
-              punkte: punkte + delta,
-              farbe: "⚪"
-            });
-          });
-        };
-
-        container.appendChild(document.createElement("br"));
-        container.appendChild(gruenBtn);
-        container.appendChild(resetUndAuswerten);
       });
+
+      const spaltenAnzahl = 3;
+      const kinderProSpalte = Math.ceil(normaleKonten.length / spaltenAnzahl);
+
+      for (let i = 0; i < normaleKonten.length; i += kinderProSpalte) {
+        const column = document.createElement("div");
+        column.className = "column";
+        normaleKonten.slice(i, i + kinderProSpalte).forEach(({ name, punkte, farbe }) => {
+          const item = document.createElement("div");
+          item.className = "item";
+
+          const nameSpan = document.createElement("span");
+          nameSpan.textContent = name;
+          nameSpan.style.color = farbeToColor(farbe);
+          nameSpan.style.cursor = "pointer";
+          nameSpan.onclick = () => toggleFarbe(name, farbe);
+
+          const punkteSpan = document.createElement("span");
+          punkteSpan.textContent = `(${punkte}) – ${farbe}`;
+
+          const plus = document.createElement("button");
+          plus.textContent = "+";
+          plus.onclick = () => changePunkte(name, 1);
+
+          const minus = document.createElement("button");
+          minus.textContent = "–";
+          minus.onclick = () => changePunkte(name, -1);
+
+          item.appendChild(nameSpan);
+          item.appendChild(punkteSpan);
+          item.appendChild(plus);
+          item.appendChild(minus);
+          column.appendChild(item);
+        });
+        wrapper.appendChild(column);
+      }
+
+      const toggleBtn = document.createElement("button");
+      toggleBtn.className = "small-button";
+      toggleBtn.textContent = "Auslandskonten ⬇";
+
+      const auslandWrapper = document.createElement("div");
+      auslandWrapper.className = "ausland-wrapper";
+
+      toggleBtn.onclick = () => {
+        auslandWrapper.classList.toggle("show");
+        toggleBtn.textContent = auslandWrapper.classList.contains("show")
+          ? "Auslandskonten ⬆"
+          : "Auslandskonten ⬇";
+      };
+      wrapper.appendChild(toggleBtn);
+
+      auslandskonten.forEach(({ name, punkte }) => {
+        const item = document.createElement("div");
+        item.className = "ausland-item";
+        item.textContent = `${name} – ${punkte}`;
+        auslandWrapper.appendChild(item);
+      });
+
+      wrapper.appendChild(auslandWrapper);
+      container.appendChild(wrapper);
+
+      const gruenBtn = document.createElement("button");
+      gruenBtn.textContent = "Alle auf Grün";
+      gruenBtn.onclick = () => {
+        normaleKonten.forEach(({ name }) =>
+          update(ref(db, `kinder/${name}`), { farbe: "🟢" })
+        );
+      };
+
+      const resetUndAuswerten = document.createElement("button");
+      resetUndAuswerten.textContent = "Durchführen";
+      resetUndAuswerten.onclick = () => {
+        normaleKonten.forEach(({ name, farbe, punkte }) => {
+          let delta = 0;
+          if (farbe === "🟢") delta = 1;
+          else if (farbe === "🔴") delta = -1;
+          else if (farbe === "⚫") delta = -2;
+          else if (farbe === "🟣") delta = 2;
+          update(ref(db, `kinder/${name}`), {
+            punkte: punkte + delta,
+            farbe: "⚪"
+          });
+        });
+      };
+
+      container.appendChild(document.createElement("br"));
+      container.appendChild(gruenBtn);
+      container.appendChild(resetUndAuswerten);
     }
 
     function toggleFarbe(name, aktuelleFarbe) {
@@ -233,8 +232,6 @@
       if (f === "🟣") return "deeppink";
       return "white";
     }
-
-    window.onload = render;
   </script>
 </head>
 <body>
