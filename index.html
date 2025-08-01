@@ -70,12 +70,22 @@
 
     const farben = ["⚪", "🔴", "🟡", "🟢", "⚫", "🟣"];
     const namen = ["Artur", "David", "Emilia", "Fridar", "Fridag", "Greta", "Irem", "Darya", "Jayden", "Leni", "Liam", "Lotte", "Lukas", "Jekaterina", "Malin", "Matthias", "Max", "Lamis", "Ella", "Niklas", "Oskar", "Ronja", "Romy", "Sophie", "Zehra"];
+    const auslandsKonten = ["Lucien", "Tom"];
 
     namen.forEach(name => {
       const refName = ref(db, `kinder/${name}`);
       get(refName).then(snapshot => {
         if (!snapshot.exists()) {
           set(refName, { punkte: 0, farbe: "⚪" });
+        }
+      });
+    });
+
+    auslandsKonten.forEach(name => {
+      const refName = ref(db, `kinder/${name}`);
+      get(refName).then(snapshot => {
+        if (!snapshot.exists()) {
+          set(refName, { punkte: 0 });
         }
       });
     });
@@ -133,6 +143,48 @@
         wrapper.appendChild(column);
       }
 
+      // Auslandskonten-Spalte
+      const auslandColumn = document.createElement("div");
+      auslandColumn.className = "column";
+
+      const auslandTitle = document.createElement("h3");
+      auslandTitle.textContent = "Auslandskonto";
+      auslandTitle.style.fontSize = "18px";
+      auslandColumn.appendChild(auslandTitle);
+
+      auslandsKonten.forEach(name => {
+        const item = document.createElement("div");
+        item.className = "item";
+        item.style.fontSize = "12px";
+        item.style.padding = "4px";
+
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = name;
+
+        const punkteSpan = document.createElement("span");
+
+        const plus = document.createElement("button");
+        plus.textContent = "+";
+        plus.onclick = () => changePunkte(name, 1);
+
+        const minus = document.createElement("button");
+        minus.textContent = "–";
+        minus.onclick = () => changePunkte(name, -1);
+
+        item.appendChild(nameSpan);
+        item.appendChild(punkteSpan);
+        item.appendChild(plus);
+        item.appendChild(minus);
+        auslandColumn.appendChild(item);
+
+        const refName = ref(db, `kinder/${name}`);
+        onValue(refName, snapshot => {
+          const val = snapshot.val() || { punkte: 0 };
+          punkteSpan.textContent = ` (${val.punkte})`;
+        });
+      });
+
+      wrapper.appendChild(auslandColumn);
       container.appendChild(wrapper);
 
       const gruenBtn = document.createElement("button");
