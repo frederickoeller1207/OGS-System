@@ -53,7 +53,7 @@
   </style>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
-    import { getDatabase, ref, onValue, set, update, get } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
+    import { getDatabase, ref, onValue, update, get } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAdPN2duh89Fx5rmYlFshdf0juhYNX_7fg",
@@ -69,26 +69,6 @@
     const db = getDatabase(app);
 
     const farben = ["⚪", "🔴", "🟡", "🟢", "⚫", "🟣"];
-    const namen = ["Artur", "David", "Emilia", "Fridar", "Fridag", "Greta", "Irem", "Darya", "Jayden", "Leni", "Liam", "Lotte", "Lukas", "Jekaterina", "Malin", "Matthias", "Max", "Lamis", "Ella", "Niklas", "Oskar", "Ronja", "Romy", "Sophie", "Zehra"];
-    const auslandsKonten = ["Lucien", "Tom"];
-
-    namen.forEach(name => {
-      const refName = ref(db, `kinder/${name}`);
-      get(refName).then(snapshot => {
-        if (!snapshot.exists()) {
-          set(refName, { punkte: 0, farbe: "⚪" });
-        }
-      });
-    });
-
-    auslandsKonten.forEach(name => {
-      const refName = ref(db, `kinder/${name}`);
-      get(refName).then(snapshot => {
-        if (!snapshot.exists()) {
-          set(refName, { punkte: 0 });
-        }
-      });
-    });
 
     function render() {
       const container = document.getElementById("app");
@@ -96,138 +76,135 @@
       const wrapper = document.createElement("div");
       wrapper.className = "container";
 
-      const spaltenAnzahl = 3;
-      const kinderProSpalte = Math.ceil(namen.length / spaltenAnzahl);
+      const normaleKonten = [];
+      const auslandskonten = [];
 
-      for (let i = 0; i < namen.length; i += kinderProSpalte) {
-        const column = document.createElement("div");
-        column.className = "column";
-        namen.slice(i, i + kinderProSpalte).forEach(name => {
+      const refKinder = ref(db, "kinder");
+      get(refKinder).then(snapshot => {
+        if (!snapshot.exists()) return;
+
+        snapshot.forEach(childSnap => {
+          const name = childSnap.key;
+          const data = childSnap.val();
+          if (data.farbe === undefined) {
+            auslandskonten.push({ name, punkte: data.punkte || 0 });
+          } else {
+            normaleKonten.push({ name, punkte: data.punkte || 0, farbe: data.farbe });
+          }
+        });
+
+        const spaltenAnzahl = 3;
+        const kinderProSpalte = Math.ceil(normaleKonten.length / spaltenAnzahl);
+
+        for (let i = 0; i < normaleKonten.length; i += kinderProSpalte) {
+          const column = document.createElement("div");
+          column.className = "column";
+          normaleKonten.slice(i, i + kinderProSpalte).forEach(({ name, punkte, farbe }) => {
+            const item = document.createElement("div");
+            item.className = "item";
+
+            const nameSpan = document.createElement("span");
+            nameSpan.textContent = name;
+            nameSpan.style.color = farbeToColor(farbe);
+            nameSpan.style.cursor = "pointer";
+            nameSpan.onclick = () => toggleFarbe(name, farbe);
+
+            const punkteSpan = document.createElement("span");
+            punkteSpan.textContent = `(${punkte}) – ${farbe}`;
+
+            const plus = document.createElement("button");
+            plus.textContent = "+";
+            plus.onclick = () => changePunkte(name, 1);
+
+            const minus = document.createElement("button");
+            minus.textContent = "–";
+            minus.onclick = () => changePunkte(name, -1);
+
+            item.appendChild(nameSpan);
+            item.appendChild(punkteSpan);
+            item.appendChild(plus);
+            item.appendChild(minus);
+            column.appendChild(item);
+          });
+          wrapper.appendChild(column);
+        }
+
+        const auslandColumn = document.createElement("div");
+        auslandColumn.className = "column";
+
+        const auslandTitle = document.createElement("h3");
+        auslandTitle.textContent = "Auslandskonto";
+        auslandTitle.style.fontSize = "18px";
+        auslandColumn.appendChild(auslandTitle);
+
+        auslandskonten.forEach(({ name, punkte }) => {
           const item = document.createElement("div");
           item.className = "item";
+          item.style.fontSize = "12px";
+          item.style.padding = "4px";
 
           const nameSpan = document.createElement("span");
-          nameSpan.style.cursor = "pointer";
-          nameSpan.onclick = () => toggleFarbe(name);
+          nameSpan.textContent = name;
 
           const punkteSpan = document.createElement("span");
+          punkteSpan.textContent = `(${punkte})`;
 
           const plus = document.createElement("button");
           plus.textContent = "+";
-          plus.onclick = e => {
-            e.stopPropagation();
-            changePunkte(name, 1);
-          };
+          plus.onclick = () => changePunkte(name, 1);
 
           const minus = document.createElement("button");
           minus.textContent = "–";
-          minus.onclick = e => {
-            e.stopPropagation();
-            changePunkte(name, -1);
-          };
+          minus.onclick = () => changePunkte(name, -1);
 
           item.appendChild(nameSpan);
           item.appendChild(punkteSpan);
           item.appendChild(plus);
           item.appendChild(minus);
-          column.appendChild(item);
-
-          const refName = ref(db, `kinder/${name}`);
-          onValue(refName, snapshot => {
-            const val = snapshot.val() || { farbe: "⚪", punkte: 0 };
-            nameSpan.textContent = name;
-            nameSpan.style.color = farbeToColor(val.farbe);
-            punkteSpan.textContent = ` (${val.punkte}) – ${val.farbe}`;
-          });
+          auslandColumn.appendChild(item);
         });
-        wrapper.appendChild(column);
-      }
 
-      // Auslandskonten-Spalte
-      const auslandColumn = document.createElement("div");
-      auslandColumn.className = "column";
+        wrapper.appendChild(auslandColumn);
+        container.appendChild(wrapper);
 
-      const auslandTitle = document.createElement("h3");
-      auslandTitle.textContent = "Auslandskonto";
-      auslandTitle.style.fontSize = "18px";
-      auslandColumn.appendChild(auslandTitle);
+        const gruenBtn = document.createElement("button");
+        gruenBtn.textContent = "Alle auf Grün";
+        gruenBtn.onclick = () => {
+          normaleKonten.forEach(({ name }) =>
+            update(ref(db, `kinder/${name}`), { farbe: "🟢" })
+          );
+        };
 
-      auslandsKonten.forEach(name => {
-        const item = document.createElement("div");
-        item.className = "item";
-        item.style.fontSize = "12px";
-        item.style.padding = "4px";
-
-        const nameSpan = document.createElement("span");
-        nameSpan.textContent = name;
-
-        const punkteSpan = document.createElement("span");
-
-        const plus = document.createElement("button");
-        plus.textContent = "+";
-        plus.onclick = () => changePunkte(name, 1);
-
-        const minus = document.createElement("button");
-        minus.textContent = "–";
-        minus.onclick = () => changePunkte(name, -1);
-
-        item.appendChild(nameSpan);
-        item.appendChild(punkteSpan);
-        item.appendChild(plus);
-        item.appendChild(minus);
-        auslandColumn.appendChild(item);
-
-        const refName = ref(db, `kinder/${name}`);
-        onValue(refName, snapshot => {
-          const val = snapshot.val() || { punkte: 0 };
-          punkteSpan.textContent = ` (${val.punkte})`;
-        });
-      });
-
-      wrapper.appendChild(auslandColumn);
-      container.appendChild(wrapper);
-
-      const gruenBtn = document.createElement("button");
-      gruenBtn.textContent = "Alle auf Grün";
-      gruenBtn.onclick = () => {
-        namen.forEach(name => update(ref(db, `kinder/${name}`), { farbe: "🟢" }));
-      };
-
-      const resetUndAuswerten = document.createElement("button");
-      resetUndAuswerten.textContent = "Durchführen";
-      resetUndAuswerten.onclick = () => {
-        namen.forEach(name => {
-          const refName = ref(db, `kinder/${name}`);
-          get(refName).then(snapshot => {
-            const val = snapshot.val() || { farbe: "⚪", punkte: 0 };
+        const resetUndAuswerten = document.createElement("button");
+        resetUndAuswerten.textContent = "Durchführen";
+        resetUndAuswerten.onclick = () => {
+          normaleKonten.forEach(({ name, farbe, punkte }) => {
             let delta = 0;
-            if (val.farbe === "🟢") delta = 1;
-            else if (val.farbe === "🔴") delta = -1;
-            else if (val.farbe === "⚫") delta = -2;
-            else if (val.farbe === "🟣") delta = 2;
-            update(refName, { punkte: val.punkte + delta, farbe: "⚪" });
+            if (farbe === "🟢") delta = 1;
+            else if (farbe === "🔴") delta = -1;
+            else if (farbe === "⚫") delta = -2;
+            else if (farbe === "🟣") delta = 2;
+            update(ref(db, `kinder/${name}`), {
+              punkte: punkte + delta,
+              farbe: "⚪"
+            });
           });
-        });
-      };
+        };
 
-      container.appendChild(document.createElement("br"));
-      container.appendChild(gruenBtn);
-      container.appendChild(resetUndAuswerten);
-    }
-
-    function toggleFarbe(name) {
-      const refName = ref(db, `kinder/${name}`);
-      get(refName).then(snapshot => {
-        const val = snapshot.val() || { farbe: "⚪", punkte: 0 };
-        const idx = (farben.indexOf(val.farbe) + 1) % farben.length;
-        update(refName, { farbe: farben[idx] });
+        container.appendChild(document.createElement("br"));
+        container.appendChild(gruenBtn);
+        container.appendChild(resetUndAuswerten);
       });
+    }
+function toggleFarbe(name, aktuelleFarbe) {
+      const idx = (farben.indexOf(aktuelleFarbe) + 1) % farben.length;
+      update(ref(db, `kinder/${name}`), { farbe: farben[idx] });
     }
 
     function changePunkte(name, delta) {
       const refName = ref(db, `kinder/${name}`);
       get(refName).then(snapshot => {
-        const val = snapshot.val() || { farbe: "⚪", punkte: 0 };
+        const val = snapshot.val() || { punkte: 0 };
         update(refName, { punkte: val.punkte + delta });
       });
     }
