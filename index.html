@@ -53,28 +53,26 @@
     .item:hover {
         transform: translateY(-2px);
     }
-    button {
-      background-color: rgba(255, 255, 255, 0.15);
-      border: 1px solid rgba(255, 255, 255, 0.4);
-      color: white;
-      padding: 8px 16px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 14px;
-      transition: background-color 0.2s, transform 0.2s;
-      font-family: 'Lato', sans-serif;
-    }
-    button:hover {
-      background-color: rgba(255, 255, 255, 0.25);
-      transform: translateY(-1px);
+    .name-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
     }
     .name-text {
       font-weight: 700;
-      flex-grow: 1;
     }
     .punkte-text {
       color: #d1d1d1;
       font-weight: 400;
+    }
+    .color-circle {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      cursor: pointer;
+      transition: background-color 0.2s;
     }
     .ausland-wrapper {
       display: none;
@@ -97,16 +95,10 @@
       text-align: center;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     }
-    .button-group {
-      display: none; /* Versteckt die Buttons */
-      justify-content: center;
-      gap: 10px;
-      margin-top: 20px;
-    }
   </style>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
-    import { getDatabase, ref, onValue, update, get } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
+    import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAdPN2duh89Fx5rmYlFshdf0juhYNX_7fg",
@@ -183,23 +175,31 @@
           const item = document.createElement("div");
           item.className = "item";
 
+          const nameWrapper = document.createElement("div");
+          nameWrapper.className = "name-wrapper";
+
           const nameSpan = document.createElement("span");
           nameSpan.className = "name-text";
           nameSpan.textContent = name;
-          nameSpan.style.color = farbeToColor(farbe);
-          nameSpan.style.cursor = "pointer";
-          nameSpan.onclick = () => toggleFarbe(name, farbe);
+          nameSpan.style.color = "white"; // Name bleibt weiß
 
+          const colorCircle = document.createElement("div");
+          colorCircle.className = "color-circle";
+          colorCircle.style.backgroundColor = farbeToColor(farbe);
+          colorCircle.onclick = (event) => {
+            event.stopPropagation(); // Verhindert, dass der Klick das ganze Element auslöst
+            toggleFarbe(name, farbe);
+          };
+
+          nameWrapper.appendChild(nameSpan);
+          nameWrapper.appendChild(colorCircle);
+          
           const punkteSpan = document.createElement("span");
           punkteSpan.className = "punkte-text";
           punkteSpan.textContent = `(${punkte})`;
 
-          const farbSpan = document.createElement("span");
-          farbSpan.textContent = farbe;
-
-          item.appendChild(nameSpan);
+          item.appendChild(nameWrapper);
           item.appendChild(punkteSpan);
-          item.appendChild(farbSpan);
           column.appendChild(item);
         });
         wrapper.appendChild(column);
